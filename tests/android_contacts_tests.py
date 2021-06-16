@@ -3,6 +3,7 @@ from appium.webdriver.common.mobileby import MobileBy
 from selenium.webdriver.support import expected_conditions
 from tests.test_base import TestBase
 from tests.project_capabilities import ProjectCapabilities
+from tauk import Tauk
 
 
 class ContactsAndroidTests(TestBase):
@@ -16,20 +17,20 @@ class ContactsAndroidTests(TestBase):
 
     def setUp(self):
         super(ContactsAndroidTests, self).setUp()
-        # Tauk.initialize(
-        #     api_token="",
-        #     project_id="",
-        #     driver=self.driver
-        # )
+        Tauk.initialize(
+            api_token="",
+            project_id="",
+            driver=self.driver
+        )
 
     def tearDown(self):
         time.sleep(5)
         print("Test Finished")
         self.test_end_time_ms = int(time.time() * 1000)
-        # Tauk.upload()
+        Tauk.upload()
         self.driver.quit()
 
-    # @Tauk.observe
+    @Tauk.observe
     def test_Contacts_AddNewContact(self):
         print("Clicking on the [Add] Button")
         self.wait.until(expected_conditions.presence_of_element_located(
