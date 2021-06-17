@@ -48,3 +48,5 @@ Tauk.upload()
 When using the Tauk package in test frameworks, such as `unittest` and `pytest`, here are some recommendations:
 - Call `Tauk.initialize(...)` within the your set up method or fixture.
 - Call `Tauk.upload()` in your teardown method or fixture.
+
+*For sample code, please take a look at the `android_contacts_tests.py` test case in the `tests` directory of the repository.*
