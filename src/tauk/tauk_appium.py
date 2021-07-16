@@ -4,7 +4,7 @@ import logging
 import inspect
 import traceback
 from tauk.enums import TestStatusType
-from tauk.utils import TestResult, format_appium_log, format_error
+from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
@@ -68,9 +68,9 @@ class Tauk:
 
     @classmethod
     def _get_log(cls):
-        # Get last 100 log entries
+        # Get last 50 log entries
         # minus the 5 log entries for issuing get_log()
-        slice_range = slice(-105, -5)
+        slice_range = slice(-55, -5)
 
         if cls._driver:
             try:
@@ -110,6 +110,11 @@ class Tauk:
                 traceback_info = traceback.extract_tb(exc_traceback)
                 filename, line_number, invoked_func, code_executed = traceback_info[-1]
 
+                testcase_steps = get_testcase_steps(
+                    testcase=func,
+                    error_line_number=line_number
+                )
+
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.failed.name,
                     test_name=func.__name__,
@@ -123,7 +128,8 @@ class Tauk:
                         line_number=str(line_number),
                         invoked_func=str(invoked_func),
                         code_executed=str(code_executed)
-                    )
+                    ),
+                    code_context=testcase_steps
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
@@ -138,7 +144,8 @@ class Tauk:
                     desired_caps=cls._get_desired_capabilities(),
                     appium_log=cls._get_log(),
                     page_source=cls._get_page_source(),
-                    error=None
+                    error=None,
+                    code_context=None
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
@@ -149,23 +156,24 @@ class Tauk:
     @classmethod
     def upload(cls, custom_session_upload_url=None):
         headers = {
-            'api-token': cls._api_token,
-            'project-id': cls._project_id
+            'api_token': cls._api_token,
+            'project_id': cls._project_id
         }
 
         if len(cls._test_results) > 0:
             for test_result in cls._test_results:
                 payload = {
-                    'test-status': test_result.status,
-                    'test-name': test_result.name,
-                    'test-filename': test_result.filename,
+                    'test_status': test_result.status,
+                    'test_name': test_result.name,
+                    'test_filename': test_result.filename,
                     'tags': test_result.desired_caps,
                     'log': format_appium_log(test_result.log),
                     'screenshot': test_result.screenshot,
                     'view': test_result.page_source,
-                    'errors': test_result.error,
-                    'automation-type': 'appium',
-                    'sdk-language': 'python'
+                    'error': test_result.error,
+                    'code_context': test_result.code_context,
+                    'automation_type': 'appium',
+                    'sdk_language': 'python'
                 }
 
                 try:
