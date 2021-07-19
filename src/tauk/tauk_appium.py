@@ -125,7 +125,7 @@ class Tauk:
                     error=format_error(
                         error_type=str(exc_value.__class__.__name__),
                         error_msg=str(exc_value),
-                        line_number=str(line_number),
+                        line_number=int(line_number),
                         invoked_func=str(invoked_func),
                         code_executed=str(code_executed)
                     ),
@@ -173,7 +173,8 @@ class Tauk:
                     'error': test_result.error,
                     'code_context': test_result.code_context,
                     'automation_type': 'appium',
-                    'sdk_language': 'python'
+                    'language': 'python',
+                    'platform': test_result.desired_caps.get('platformName')
                 }
 
                 try:
