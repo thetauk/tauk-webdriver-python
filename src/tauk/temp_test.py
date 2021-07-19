@@ -76,8 +76,8 @@ class ContactsAndroidTests(TestBase):
     def setUp(self):
         super(ContactsAndroidTests, self).setUp()
         Tauk.initialize(
-            api_token="5WOnv-KtB2MoV5RlOiK3ONrDCnw",
-            project_id="lFc0ZiW2R",
+            api_token="",
+            project_id="",
             driver=self.driver,
         )
 
