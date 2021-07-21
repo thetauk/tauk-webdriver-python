@@ -1,6 +1,7 @@
 import re
 import inspect
 import linecache
+from collections import MutableMapping
 
 
 class TestResult:
@@ -48,6 +49,28 @@ def format_appium_log(log_list):
 
         output.append(formatted_event)
     return output
+
+
+def flatten_desired_capabilities(d, parent_key='', sep='_'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+
+        if isinstance(v, MutableMapping):
+            items.extend(flatten_desired_capabilities(
+                v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+def get_automation_type(desired_capabilities):
+    if desired_capabilities.get('automationName'):
+        return 'appium'
+    elif desired_capabilities.get('browserName'):
+        return 'selenium'
+    else:
+        return None
 
 
 def get_testcase_steps(testcase, error_line_number=0):

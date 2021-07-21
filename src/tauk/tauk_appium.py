@@ -4,7 +4,7 @@ import logging
 import inspect
 import traceback
 from tauk.enums import TestStatusType
-from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps
+from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps, flatten_desired_capabilities, get_automation_type
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
@@ -79,6 +79,7 @@ class Tauk:
                 logging.error(
                     "An issue occurred while requesting the Appium server logs.")
                 logging.error(traceback.format_exc())
+                return None
             return log
         else:
             return None
@@ -87,11 +88,18 @@ class Tauk:
     def _get_desired_capabilities(cls):
         if cls._driver:
             try:
+                # Appium
                 dc = cls._driver.desired_capabilities['desired']
             except:
-                logging.error(
-                    "An issue occurred while trying to retrieve the desired capabilities.")
-                logging.error(traceback.format_exc())
+                try:
+                    # Selenium
+                    dc = flatten_desired_capabilities(
+                        cls._driver.desired_capabilities)
+                except:
+                    logging.error(
+                        "An issue occurred while trying to retrieve the desired capabilities.")
+                    logging.error(traceback.format_exc())
+                    return None
             return dc
         else:
             return None
@@ -167,12 +175,12 @@ class Tauk:
                     'test_name': test_result.name,
                     'test_filename': test_result.filename,
                     'tags': test_result.desired_caps,
-                    'log': format_appium_log(test_result.log),
+                    'log': format_appium_log(test_result.log) if test_result.log is not None else None,
                     'screenshot': test_result.screenshot,
                     'view': test_result.page_source,
                     'error': test_result.error,
                     'code_context': test_result.code_context,
-                    'automation_type': 'appium',
+                    'automation_type': get_automation_type(test_result.desired_caps),
                     'language': 'python',
                     'platform': test_result.desired_caps.get('platformName')
                 }
