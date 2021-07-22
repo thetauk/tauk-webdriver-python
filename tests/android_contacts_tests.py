@@ -3,6 +3,7 @@ from appium.webdriver.common.mobileby import MobileBy
 from selenium.webdriver.support import expected_conditions
 from tests.test_base import TestBase
 from tests.project_capabilities import ProjectCapabilities
+# Import Tauk
 from tauk import Tauk
 
 
@@ -17,6 +18,7 @@ class ContactsAndroidTests(TestBase):
 
     def setUp(self):
         super(ContactsAndroidTests, self).setUp()
+        # Initialize Tauk with your api_token, project_id, and driver
         Tauk.initialize(
             api_token="",
             project_id="",
@@ -27,9 +29,11 @@ class ContactsAndroidTests(TestBase):
         time.sleep(5)
         print("Test Finished")
         self.test_end_time_ms = int(time.time() * 1000)
+        # Before you quit your driver session, call Tauk.upload()
         Tauk.upload()
         self.driver.quit()
 
+    # Decorate the test cases you want to monitor with @Tauk.observe
     @Tauk.observe
     def test_Contacts_AddNewContact(self):
         print("Clicking on the [Add] Button")
