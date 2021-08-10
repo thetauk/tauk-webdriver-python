@@ -5,7 +5,7 @@ from collections import MutableMapping
 
 
 class TestResult:
-    def __init__(self, test_status=None, test_name=None, filename=None, desired_caps=None, appium_log=None, screenshot=None, page_source=None, error=None, code_context=None):
+    def __init__(self, test_status=None, test_name=None, filename=None, desired_caps=None, appium_log=None, screenshot=None, page_source=None, error=None, code_context=None, elapsed_time_ms=None):
         self.status = test_status
         self.name = test_name
         self.filename = filename
@@ -15,6 +15,7 @@ class TestResult:
         self.page_source = page_source
         self.error = error
         self.code_context = code_context
+        self.elapsed_time_ms = elapsed_time_ms
 
 
 def format_error(error_type=None, error_msg=None, line_number=None, invoked_func=None, code_executed=None):
@@ -71,6 +72,10 @@ def get_automation_type(desired_capabilities):
         return 'selenium'
     else:
         return None
+
+
+def calculate_elapsed_time_ms(start_time, end_time):
+    return int((end_time-start_time)*1000)
 
 
 def get_testcase_steps(testcase, error_line_number=0):

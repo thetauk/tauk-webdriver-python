@@ -1,10 +1,11 @@
 import sys
+import time
 import ntpath
 import logging
 import inspect
 import traceback
 from tauk.enums import TestStatusType
-from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps, flatten_desired_capabilities, get_automation_type
+from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps, flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
@@ -112,8 +113,11 @@ class Tauk:
 
         def invoke_test_case(*args, **kwargs):
             try:
+                start_time = time.perf_counter()
                 result = func(*args, **kwargs)
             except:
+                failure_end_time = time.perf_counter()
+
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 traceback_info = traceback.extract_tb(exc_traceback)
                 filename, line_number, invoked_func, code_executed = traceback_info[-1]
@@ -137,7 +141,9 @@ class Tauk:
                         invoked_func=str(invoked_func),
                         code_executed=str(code_executed)
                     ),
-                    code_context=testcase_steps
+                    code_context=testcase_steps,
+                    elapsed_time_ms=calculate_elapsed_time_ms(
+                        start_time, failure_end_time)
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
@@ -145,6 +151,8 @@ class Tauk:
                 # raise exc_type(exc_value).with_traceback(exc_traceback.tb_next)
                 raise
             else:
+                success_end_time = time.perf_counter()
+
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.passed.name,
                     test_name=func.__name__,
@@ -153,7 +161,9 @@ class Tauk:
                     appium_log=cls._get_log(),
                     page_source=cls._get_page_source(),
                     error=None,
-                    code_context=None
+                    code_context=None,
+                    elapsed_time_ms=calculate_elapsed_time_ms(
+                        start_time, success_end_time)
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
@@ -182,7 +192,8 @@ class Tauk:
                     'code_context': test_result.code_context,
                     'automation_type': get_automation_type(test_result.desired_caps),
                     'language': 'python',
-                    'platform': test_result.desired_caps.get('platformName')
+                    'platform': test_result.desired_caps.get('platformName'),
+                    'elapsed_time_ms': test_result.elapsed_time_ms
                 }
 
                 try:
