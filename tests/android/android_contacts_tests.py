@@ -1,8 +1,8 @@
 import time
 from appium.webdriver.common.mobileby import MobileBy
 from selenium.webdriver.support import expected_conditions
-from tests.test_base import TestBase
-from tests.project_capabilities import ProjectCapabilities
+from tests.android.test_base import TestBase
+from tests.android.project_capabilities import ProjectCapabilities
 # Import Tauk
 from tauk import Tauk
 
@@ -20,8 +20,8 @@ class ContactsAndroidTests(TestBase):
         super(ContactsAndroidTests, self).setUp()
         # Initialize Tauk with your api_token, project_id, and driver
         Tauk.initialize(
-            api_token="",
-            project_id="",
+            api_token="5WOnv-6as53MI9Tc2ie7w8rsgQbA",
+            project_id="TFe75DGeS",
             driver=self.driver
         )
 
@@ -30,7 +30,7 @@ class ContactsAndroidTests(TestBase):
         print("Test Finished")
         self.test_end_time_ms = int(time.time() * 1000)
         # Before you quit your driver session, call Tauk.upload()
-        Tauk.upload()
+        # Tauk.upload()
         self.driver.quit()
 
     # Decorate the test cases you want to monitor with @Tauk.observe

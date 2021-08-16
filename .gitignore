@@ -86,3 +86,6 @@ venv.bak/
 ######    Logs  ######
 ######################
 *.log
+
+# Chromedriver
+bin/chromedriver
