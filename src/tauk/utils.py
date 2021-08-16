@@ -52,16 +52,15 @@ def format_appium_log(log_list):
     return output
 
 
-def flatten_desired_capabilities(d, parent_key='', sep='_'):
+def flatten_desired_capabilities(desired_caps, parent_key='', sep='_'):
     items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-
-        if isinstance(v, MutableMapping):
+    for key, value in desired_caps.items():
+        new_key = parent_key + sep + key if parent_key else key
+        if isinstance(value, MutableMapping):
             items.extend(flatten_desired_capabilities(
-                v, new_key, sep=sep).items())
+                value, new_key, sep=sep).items())
         else:
-            items.append((new_key, v))
+            items.append((new_key, value))
     return dict(items)
 
 
