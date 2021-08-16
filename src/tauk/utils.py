@@ -67,9 +67,22 @@ def flatten_desired_capabilities(d, parent_key='', sep='_'):
 
 def get_automation_type(desired_capabilities):
     if desired_capabilities.get('automationName'):
-        return 'appium'
+        return 'Appium'
     elif desired_capabilities.get('browserName'):
-        return 'selenium'
+        return 'Selenium'
+    else:
+        return None
+
+
+def get_platform_name(desired_capabilities):
+    if desired_capabilities.get('browserName'):
+        return desired_capabilities.get('browserName').title()
+    elif desired_capabilities.get('platformName'):
+        mobilePlatformName = desired_capabilities.get('platformName').lower()
+        if mobilePlatformName == "ios":
+            return "iOS"
+        else:
+            return mobilePlatformName.title()
     else:
         return None
 
