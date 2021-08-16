@@ -64,24 +64,33 @@ def flatten_desired_capabilities(desired_caps, parent_key='', sep='_'):
     return dict(items)
 
 
-def get_automation_type(desired_capabilities):
-    if desired_capabilities.get('automationName'):
+def get_automation_type(desired_caps):
+    if desired_caps.get('automationName'):
         return 'Appium'
-    elif desired_capabilities.get('browserName'):
+    elif desired_caps.get('browserName'):
         return 'Selenium'
     else:
         return None
 
 
-def get_platform_name(desired_capabilities):
-    if desired_capabilities.get('browserName'):
-        return desired_capabilities.get('browserName').title()
-    elif desired_capabilities.get('platformName'):
-        mobilePlatformName = desired_capabilities.get('platformName').lower()
+def get_platform_name(desired_caps):
+    if desired_caps.get('browserName'):
+        return desired_caps.get('browserName').title()
+    elif desired_caps.get('platformName'):
+        mobilePlatformName = desired_caps.get('platformName').lower()
         if mobilePlatformName == "ios":
             return "iOS"
         else:
             return mobilePlatformName.title()
+    else:
+        return None
+
+
+def get_platform_version(desired_caps):
+    if desired_caps.get('browserVersion'):
+        return desired_caps.get('browserVersion')
+    elif desired_caps.get('platformVersion'):
+        return desired_caps.get('platformVersion')
     else:
         return None
 

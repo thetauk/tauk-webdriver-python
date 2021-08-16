@@ -5,7 +5,7 @@ import logging
 import inspect
 import traceback
 from tauk.enums import TestStatusType
-from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps, flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms, get_platform_name
+from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps, flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms, get_platform_name, get_platform_version
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
@@ -193,6 +193,7 @@ class Tauk:
                     'automation_type': get_automation_type(test_result.desired_caps),
                     'language': 'Python',
                     'platform': get_platform_name(test_result.desired_caps),
+                    'platform_version': get_platform_version(test_result.desired_caps),
                     'elapsed_time_ms': test_result.elapsed_time_ms
                 }
 

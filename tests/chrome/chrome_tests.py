@@ -16,15 +16,14 @@ class ChromeTests(TestBase):
 
     def setUp(self):
         super().setUp()
-        Tauk.initialize(api_token="5WOnv-KtB2MoV5RlOiK3ONrDCnw",
-                        project_id="sAm5sRaiQ", driver=self.driver)
+        Tauk.initialize(api_token="API-TOKEN",
+                        project_id="PROJECT-ID", driver=self.driver)
 
     def tearDown(self):
         time.sleep(5)
         print("Test Finished")
         self.test_end_time_ms = int(time.time() * 1000)
-        # Tauk.upload(
-        #     custom_session_upload_url="http://127.0.0.1:5000/api/v1/session/upload")
+        Tauk.upload()
         self.driver.quit()
 
     @Tauk.observe
