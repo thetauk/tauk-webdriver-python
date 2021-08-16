@@ -31,9 +31,6 @@ class ChromeTests(TestBase):
     def test_AppiumIO_GettingStarted(self):
         self.driver.get("https://appium.io/")
 
-        import pdb
-        pdb.set_trace()
-
         time.sleep(1)
         print("Clicking on the [Nav Bar] Button")
         self.wait.until(expected_conditions.presence_of_element_located(
