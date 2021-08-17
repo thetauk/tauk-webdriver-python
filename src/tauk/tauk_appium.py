@@ -193,7 +193,7 @@ class Tauk:
                     'automation_type': get_automation_type(test_result.desired_caps),
                     'language': 'Python',
                     'platform': get_platform_name(test_result.desired_caps),
-                    'platform_version': get_platform_version(test_result.desired_caps),
+                    'platform_version': get_platform_version(cls._driver.desired_capabilities),
                     'elapsed_time_ms': test_result.elapsed_time_ms
                 }
 
