@@ -206,7 +206,6 @@ class Tauk:
                         timeout=(15, 15)
                     )
                     response.raise_for_status()
-
                 except HTTPError as http_status_error:
                     logging.error("An HTTP status code error occurred.")
                     logging.error(http_status_error)
@@ -224,3 +223,5 @@ class Tauk:
                         "An error occurred trying to make an upload request.")
                     logging.error(request_error)
                     logging.error(response.text)
+                else:
+                    return response.json()['test_id']
