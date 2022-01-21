@@ -180,6 +180,7 @@ class Tauk:
 
         if len(cls._test_results) > 0:
             for test_result in cls._test_results:
+
                 payload = {
                     'test_status': test_result.status,
                     'test_name': test_result.name,
@@ -206,6 +207,7 @@ class Tauk:
                         timeout=(15, 15)
                     )
                     response.raise_for_status()
+
                 except HTTPError as http_status_error:
                     logging.error("An HTTP status code error occurred.")
                     logging.error(http_status_error)
@@ -224,4 +226,4 @@ class Tauk:
                     logging.error(request_error)
                     logging.error(response.text)
                 else:
-                    return response.json()['test_id']
+                    return response.json()
