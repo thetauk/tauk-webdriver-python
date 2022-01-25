@@ -217,19 +217,24 @@ class Tauk:
                 except HTTPError as http_status_error:
                     logging.error("An HTTP status code error occurred.")
                     logging.error(http_status_error)
-                    logging.error(response.text)
+                    logging.error(http_status_error.response.text)
+                    print(
+                        f"ERROR: {http_status_error.response.json().get('error')}")
                 except ConnectionError as connection_error:
                     logging.error("An error connecting to the API occurred.")
                     logging.error(connection_error)
-                    logging.error(response.text)
+                    logging.error(connection_error.text)
+                    print("ERROR: Unable to connect to the Tauk Platform.")
                 except Timeout as timeout_error:
                     logging.error("A timeout error occurred.")
                     logging.error(timeout_error)
-                    logging.error(response.text)
+                    logging.error(timeout_error.text)
+                    print("ERROR: The upload request timed out.")
                 except RequestException as request_error:
                     logging.error(
                         "An error occurred trying to make an upload request.")
                     logging.error(request_error)
-                    logging.error(response.text)
+                    logging.error(request_error.text)
+                    print(f"ERROR: Unable to perform an upload request.")
                 else:
                     return response.json()
