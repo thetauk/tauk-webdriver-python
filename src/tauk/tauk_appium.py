@@ -108,8 +108,14 @@ class Tauk:
     @classmethod
     def observe(cls, func):
 
-        caller_frame = inspect.stack()[1]
-        caller_filename = ntpath.basename(caller_frame.filename)
+        all_frames = inspect.stack()
+        caller_frame = None
+        caller_filename = None
+        for frame_info in all_frames:
+            if func.__name__ in frame_info.frame.f_code.co_names:
+                caller_frame = frame_info
+                caller_filename = ntpath.basename(caller_frame.filename)
+                break
 
         def invoke_test_case(*args, **kwargs):
             try:
