@@ -1,11 +1,16 @@
 import re
 import inspect
 import linecache
-from collections import MutableMapping
+
+try:
+    from collections.abc import MutableMapping  # noqa
+except ImportError:
+    from collections import MutableMapping  # noqa
 
 
 class TestResult:
-    def __init__(self, test_status=None, test_name=None, filename=None, desired_caps=None, appium_log=None, screenshot=None, page_source=None, error=None, code_context=None, elapsed_time_ms=None):
+    def __init__(self, test_status=None, test_name=None, filename=None, desired_caps=None, appium_log=None,
+                 screenshot=None, page_source=None, error=None, code_context=None, elapsed_time_ms=None):
         self.status = test_status
         self.name = test_name
         self.filename = filename
@@ -96,7 +101,7 @@ def get_platform_version(desired_caps):
 
 
 def calculate_elapsed_time_ms(start_time, end_time):
-    return int((end_time-start_time)*1000)
+    return int((end_time - start_time) * 1000)
 
 
 def get_testcase_steps(testcase, error_line_number=0):
