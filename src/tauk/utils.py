@@ -1,7 +1,7 @@
 import re
 import inspect
 import linecache
-from collections import MutableMapping
+from collections.abc import MutableMapping
 
 
 class TestResult:
