@@ -108,8 +108,14 @@ class Tauk:
     @classmethod
     def observe(cls, func):
 
-        caller_frame = inspect.stack()[1]
-        caller_filename = ntpath.basename(caller_frame.filename)
+        all_frames = inspect.stack()
+        caller_frame = None
+        caller_filename = None
+        for frame_info in all_frames:
+            if func.__name__ in frame_info.frame.f_code.co_names:
+                caller_frame = frame_info
+                caller_filename = ntpath.basename(caller_frame.filename)
+                break
 
         def invoke_test_case(*args, **kwargs):
             try:
@@ -119,8 +125,12 @@ class Tauk:
                 failure_end_time = time.perf_counter()
 
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                traceback_info = traceback.extract_tb(exc_traceback)
-                filename, line_number, invoked_func, code_executed = traceback_info[-1]
+                stack_summary_list = traceback.extract_tb(exc_traceback)
+                filename, line_number, invoked_func, code_executed = None, None, None, None
+                for stack_trace in stack_summary_list:
+                    if stack_trace.filename == caller_filename:
+                        filename, line_number, invoked_func, code_executed = stack_trace
+                        break
 
                 testcase_steps = get_testcase_steps(
                     testcase=func,
@@ -211,19 +221,27 @@ class Tauk:
                 except HTTPError as http_status_error:
                     logging.error("An HTTP status code error occurred.")
                     logging.error(http_status_error)
-                    logging.error(response.text)
+                    logging.error(http_status_error.response.text)
+                    try:
+                        print(
+                            f"ERROR: {http_status_error.response.json().get('error')}")
+                    except:
+                        print(f"ERROR: {http_status_error.response.text}")
                 except ConnectionError as connection_error:
                     logging.error("An error connecting to the API occurred.")
                     logging.error(connection_error)
-                    logging.error(response.text)
+                    logging.error(connection_error.text)
+                    print("ERROR: Unable to connect to the Tauk Platform.")
                 except Timeout as timeout_error:
                     logging.error("A timeout error occurred.")
                     logging.error(timeout_error)
-                    logging.error(response.text)
+                    logging.error(timeout_error.text)
+                    print("ERROR: The upload request timed out.")
                 except RequestException as request_error:
                     logging.error(
                         "An error occurred trying to make an upload request.")
                     logging.error(request_error)
-                    logging.error(response.text)
+                    logging.error(request_error.text)
+                    print(f"ERROR: Unable to perform an upload request.")
                 else:
                     return response.json()

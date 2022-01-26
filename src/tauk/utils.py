@@ -1,7 +1,6 @@
 import re
 import inspect
 import linecache
-
 try:
     from collections.abc import MutableMapping  # noqa
 except ImportError:
