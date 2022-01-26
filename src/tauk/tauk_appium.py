@@ -125,8 +125,12 @@ class Tauk:
                 failure_end_time = time.perf_counter()
 
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                traceback_info = traceback.extract_tb(exc_traceback)
-                filename, line_number, invoked_func, code_executed = traceback_info[-1]
+                stack_summary_list = traceback.extract_tb(exc_traceback)
+                filename, line_number, invoked_func, code_executed = None, None, None, None
+                for stack_trace in stack_summary_list:
+                    if stack_trace.filename == caller_filename:
+                        filename, line_number, invoked_func, code_executed = stack_trace
+                        break
 
                 testcase_steps = get_testcase_steps(
                     testcase=func,
@@ -218,8 +222,11 @@ class Tauk:
                     logging.error("An HTTP status code error occurred.")
                     logging.error(http_status_error)
                     logging.error(http_status_error.response.text)
-                    print(
-                        f"ERROR: {http_status_error.response.json().get('error')}")
+                    try:
+                        print(
+                            f"ERROR: {http_status_error.response.json().get('error')}")
+                    except:
+                        print(f"ERROR: {http_status_error.response.text}")
                 except ConnectionError as connection_error:
                     logging.error("An error connecting to the API occurred.")
                     logging.error(connection_error)
