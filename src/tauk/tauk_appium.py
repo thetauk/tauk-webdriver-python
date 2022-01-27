@@ -157,8 +157,27 @@ class Tauk:
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
-                # traceback.print_exception(exc_type, exc_value, exc_traceback, limit=-1)
-                # raise exc_type(exc_value).with_traceback(exc_traceback.tb_next)
+
+                # Build a new stack with the traceback objects,
+                # except the one traceback object that references the Tauk package
+                new_traceback_stack = []
+                while exc_traceback is not None:
+                    # Skip frames that contain 'tauk_appium.py' in the filename
+                    if caller_filename in exc_traceback.tb_frame.f_code.co_filename:
+                        exc_traceback = exc_traceback.tb_next
+                        continue
+
+                    new_traceback_stack.append(exc_traceback)
+                    exc_traceback = exc_traceback.tb_next
+
+                # Assign tb_next in reverse to avoid circular references
+                tb_next = None
+                for tb in reversed(new_traceback_stack):
+                    tb.tb_next = tb_next
+                    tb_next = tb
+
+                # Trying to determine the correct way to raise the new traceback
+                # raise exc_value.with_traceback(tb_next)
                 raise
             else:
                 success_end_time = time.perf_counter()
