@@ -5,7 +5,10 @@ import logging
 import inspect
 import traceback
 from tauk.enums import TestStatusType
-from tauk.utils import TestResult, format_appium_log, format_error, get_testcase_steps, flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms, get_platform_name, get_platform_version
+from tauk.utils import (TestResult, format_appium_log, format_error, get_testcase_steps,
+                        flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms,
+                        get_platform_name, get_platform_version, print_modified_exception_traceback
+                        )
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
@@ -114,7 +117,7 @@ class Tauk:
         for frame_info in all_frames:
             if func.__name__ in frame_info.frame.f_code.co_names:
                 caller_frame = frame_info
-                caller_filename = ntpath.basename(caller_frame.filename)
+                caller_filename = caller_frame.filename
                 break
 
         def invoke_test_case(*args, **kwargs):
@@ -140,7 +143,7 @@ class Tauk:
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.failed.name,
                     test_name=func.__name__,
-                    filename=caller_filename,
+                    filename=ntpath.basename(caller_filename),
                     desired_caps=cls._get_desired_capabilities(),
                     appium_log=cls._get_log(),
                     page_source=cls._get_page_source(),
@@ -158,26 +161,12 @@ class Tauk:
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
 
-                # Build a new stack with the traceback objects,
-                # except the one traceback object that references the Tauk package
-                new_traceback_stack = []
-                while exc_traceback is not None:
-                    # Skip frames that contain 'tauk_appium.py' in the filename
-                    if caller_filename in exc_traceback.tb_frame.f_code.co_filename:
-                        exc_traceback = exc_traceback.tb_next
-                        continue
-
-                    new_traceback_stack.append(exc_traceback)
-                    exc_traceback = exc_traceback.tb_next
-
-                # Assign tb_next in reverse to avoid circular references
-                tb_next = None
-                for tb in reversed(new_traceback_stack):
-                    tb.tb_next = tb_next
-                    tb_next = tb
-
-                # Trying to determine the correct way to raise the new traceback
-                # raise exc_value.with_traceback(tb_next)
+                # Suppress the traceback information
+                # (only the exception type and value will be printed)
+                # and print our custom traceback information
+                print_modified_exception_traceback(
+                    exc_type, exc_value, exc_traceback, tauk_package_filename=__file__)
+                sys.tracebacklimit = 0
                 raise
             else:
                 success_end_time = time.perf_counter()
