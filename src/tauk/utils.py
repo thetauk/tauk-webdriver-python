@@ -1,5 +1,6 @@
 import re
 import inspect
+import traceback
 import linecache
 try:
     from collections.abc import MutableMapping  # noqa
@@ -133,6 +134,29 @@ def get_testcase_steps(testcase, error_line_number=0):
                 return result
     else:
         return output
+
+
+def print_modified_exception_traceback(exc_type, exc_value, exc_traceback, tauk_package_filename):
+    # Build a new stack with the traceback objects,
+    # except the one traceback object that references the Tauk package
+    new_traceback_stack = []
+    while exc_traceback is not None:
+        # Skip frames that contain the Tauk package file ('tauk_appium.py')
+        # in the filename
+        if tauk_package_filename in exc_traceback.tb_frame.f_code.co_filename:
+            exc_traceback = exc_traceback.tb_next
+            continue
+
+        new_traceback_stack.append(exc_traceback)
+        exc_traceback = exc_traceback.tb_next
+
+    # Assign tb_next in reverse to avoid circular references
+    tb_next = None
+    for tb in reversed(new_traceback_stack):
+        tb.tb_next = tb_next
+        tb_next = tb
+
+    print(''.join(traceback.format_exception(exc_type, exc_value, tb_next)))
 
 
 class FuncTracer:
