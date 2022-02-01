@@ -46,6 +46,9 @@ class Tauk:
     def _get_page_source(cls):
         if cls._driver:
             try:
+                if 'FLUTTER' in cls._driver.contexts:
+                    cls._driver.switch_to.context('NATIVE_APP')
+
                 raw_page_source = cls._driver.page_source
             except:
                 logging.error(
