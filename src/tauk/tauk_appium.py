@@ -111,6 +111,22 @@ class Tauk:
         else:
             return None
 
+    # Flutter Specific
+    @classmethod
+    def _get_flutter_render_tree(cls):
+        if cls._driver and 'FLUTTER' in cls._driver.contexts:
+            try:
+                render_tree_source = cls._driver.execute_script(
+                    "flutter: getRenderTree")
+            except:
+                logging.error(
+                    "An issue occurred while trying to retrieve the Flutter render tree.")
+                logging.error(traceback.format_exc())
+                return None
+            return render_tree_source
+        else:
+            return None
+
     @classmethod
     def observe(cls, func):
 
@@ -159,7 +175,8 @@ class Tauk:
                     ),
                     code_context=testcase_steps,
                     elapsed_time_ms=calculate_elapsed_time_ms(
-                        start_time, failure_end_time)
+                        start_time, failure_end_time),
+                    flutter_render_tree=cls._get_flutter_render_tree()
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
@@ -184,7 +201,8 @@ class Tauk:
                     error=None,
                     code_context=None,
                     elapsed_time_ms=calculate_elapsed_time_ms(
-                        start_time, success_end_time)
+                        start_time, success_end_time),
+                    flutter_render_tree=cls._get_flutter_render_tree()
                 )
                 test_result.screenshot = cls._get_screenshot()
                 cls._test_results.append(test_result)
@@ -216,7 +234,8 @@ class Tauk:
                     'language': 'Python',
                     'platform': get_platform_name(test_result.desired_caps),
                     'platform_version': get_platform_version(cls._driver.desired_capabilities),
-                    'elapsed_time_ms': test_result.elapsed_time_ms
+                    'elapsed_time_ms': test_result.elapsed_time_ms,
+                    'flutter_render_tree': test_result.flutter_render_tree
                 }
 
                 try:

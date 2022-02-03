@@ -10,7 +10,7 @@ except ImportError:
 
 class TestResult:
     def __init__(self, test_status=None, test_name=None, filename=None, desired_caps=None, appium_log=None,
-                 screenshot=None, page_source=None, error=None, code_context=None, elapsed_time_ms=None):
+                 screenshot=None, page_source=None, error=None, code_context=None, elapsed_time_ms=None, flutter_render_tree=None):
         self.status = test_status
         self.name = test_name
         self.filename = filename
@@ -21,6 +21,7 @@ class TestResult:
         self.error = error
         self.code_context = code_context
         self.elapsed_time_ms = elapsed_time_ms
+        self.flutter_render_tree = flutter_render_tree
 
 
 def format_error(error_type=None, error_msg=None, line_number=None, invoked_func=None, code_executed=None):
