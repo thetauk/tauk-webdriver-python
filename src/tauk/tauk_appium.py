@@ -96,12 +96,12 @@ class Tauk:
         if cls._driver:
             try:
                 # Appium
-                dc = cls._driver.desired_capabilities['desired']
+                dc = cls._driver.capabilities['desired']
             except:
                 try:
                     # Selenium
                     dc = flatten_desired_capabilities(
-                        cls._driver.desired_capabilities)
+                        cls._driver.capabilities)
                 except:
                     logging.error(
                         "An issue occurred while trying to retrieve the desired capabilities.")
@@ -234,7 +234,7 @@ class Tauk:
                     'automation_type': get_automation_type(test_result.desired_caps),
                     'language': 'Python',
                     'platform': get_platform_name(test_result.desired_caps),
-                    'platform_version': get_platform_version(cls._driver.desired_capabilities),
+                    'platform_version': get_platform_version(cls._driver.capabilities),
                     'elapsed_time_ms': test_result.elapsed_time_ms,
                     'flutter_render_tree': test_result.flutter_render_tree
                 }
