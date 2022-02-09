@@ -1,11 +1,10 @@
 """Setup script for the Tauk package"""
 
 from setuptools import setup, find_packages
-import os
-
-
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+# Read the contents of the README.md file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 
 def main():
@@ -16,7 +15,8 @@ def main():
         name=app.__project__,
         version=app.__version__,
         description=app.__doc__,
-        long_description=read('README.md'),
+        long_description=long_description,
+        long_description_content_type='text/markdown',
         classifiers=app.__classifiers__,
         author=app.__author__,
         url=app.__url__,
