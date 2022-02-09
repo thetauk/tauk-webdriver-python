@@ -1,3 +1,5 @@
+"""Helper package to facilitate reporting for webdriver-based tests on Tauk"""
+
 from tauk.tauk_appium import Tauk
 
 __project__ = "tauk"
