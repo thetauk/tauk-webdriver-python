@@ -26,7 +26,7 @@ jobs:
           echo $VERSION_FILE
           grep "$PLACEHOLDER" "$VERSION_FILE"
           echo "GREP COMPLETE"
-          sed -i "s/$PLACEHOLDER/__version__ = \"${VERSION}\"/g" "$VERSION_FILE"
+          sed -i -e "s/$PLACEHOLDER/__version__ = \"${VERSION}\"/g" "$VERSION_FILE"
           echo "SED COMPLETE"
         shell: bash
       - name: Install dependancies
