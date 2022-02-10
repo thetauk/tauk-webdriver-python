@@ -18,7 +18,7 @@ jobs:
       - name: Autobump version
         run: |
           # from refs/tags/v1.2.3 get 1.2.3
-          VERSION=$(echo $GITHUB_REF | sed 's#.*/v##')
+          VERSION=$(echo $GITHUB_REF | sed 's:.*/[^0-9]*::')
           PLACEHOLDER='__version__ = "develop"'
           VERSION_FILE='tauk/__init__.py'
           
