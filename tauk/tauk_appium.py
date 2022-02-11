@@ -4,7 +4,7 @@ import ntpath
 import logging
 import inspect
 import traceback
-from tauk.enums import TestStatusType
+from tauk.enums import TestStatus
 from tauk.utils import (TestResult, format_appium_log, format_error, get_testcase_steps,
                         flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms,
                         get_platform_name, get_platform_version, print_modified_exception_traceback
@@ -161,7 +161,7 @@ class Tauk:
                 )
 
                 test_result = TestResult(
-                    test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.failed.name,
+                    test_status=TestStatus.EXCLUDED.value if cls._excluded else TestStatus.FAILED.value,
                     test_name=func.__name__,
                     filename=ntpath.basename(caller_filename),
                     desired_caps=cls._get_desired_capabilities(),
