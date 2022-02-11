@@ -1,4 +1,8 @@
 """Helper package to facilitate reporting for webdriver-based tests on Tauk"""
+import logging
+import os
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from tauk.tauk_appium import Tauk
 
@@ -16,3 +20,24 @@ __requires__ = ["requests", "Appium-Python-Client", "selenium"]
 
 __extra_requires__ = {
 }
+
+
+def _init_logger():
+    log_filename = os.path.join(Path.home(), '.tauk', 'logs', 'tauk-webdriver.log')
+    os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+
+    tauk_logger = logging.getLogger('tauk')
+    tauk_logger.setLevel(logging.getLogger())
+    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
+
+    file_handler = RotatingFileHandler(log_filename, maxBytes=10000000, backupCount=3)
+    file_handler.setFormatter(formatter)
+    tauk_logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler()
+    # stream_handler.setLevel(logging.ERROR)
+    stream_handler.setFormatter(formatter)
+    tauk_logger.addHandler(stream_handler)
+
+
+_init_logger()
