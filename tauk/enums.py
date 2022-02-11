@@ -1,8 +1,31 @@
-from enum import Enum
+from enum import Enum, unique
 
-class TestStatusType(Enum):
-    failed = 0
-    passed = 1
-    excluded = 2
-    resolved = 3
-    undetermined = 4
+
+@unique
+class TestStatus(Enum):
+    FAILED = 'failed'
+    PASSED = 'passed'
+    EXCLUDED = 'excluded'
+
+
+@unique
+class BrowserNames(Enum):
+    CHROME = 'chrome'
+    FIREFOX = 'firefox'
+    EDGE = 'edge'
+    SAFARI = 'safari'
+
+
+@unique
+class AutomationTypes(Enum):
+    APPIUM = 'appium'
+    SELENIUM = 'selenium'
+
+
+@unique
+class PlatformTypes(Enum):
+    IOS = 'ios'
+    ANDROID = 'android'
+    WINDOWS = 'windows'
+    LINUX = 'linux'
+    OSX = 'osx'

@@ -27,7 +27,7 @@ def _init_logger():
     os.makedirs(os.path.dirname(log_filename), exist_ok=True)
 
     tauk_logger = logging.getLogger('tauk')
-    tauk_logger.setLevel(logging.getLogger())
+    tauk_logger.setLevel(logging.INFO)
     formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
 
     file_handler = RotatingFileHandler(log_filename, maxBytes=10000000, backupCount=3)
@@ -35,7 +35,7 @@ def _init_logger():
     tauk_logger.addHandler(file_handler)
 
     stream_handler = logging.StreamHandler()
-    # stream_handler.setLevel(logging.ERROR)
+    stream_handler.setLevel(logging.ERROR)
     stream_handler.setFormatter(formatter)
     tauk_logger.addHandler(stream_handler)
 
