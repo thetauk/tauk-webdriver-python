@@ -114,7 +114,7 @@ class Tauk:
     # Flutter Specific
     @classmethod
     def _get_flutter_render_tree(cls):
-        if cls._driver and 'FLUTTER' in cls._driver.contexts:
+        if cls._driver and 'appium' in cls._driver.__class__.__module__ and 'FLUTTER' in cls._driver.contexts:
             try:
                 cls._driver.switch_to.context('FLUTTER')
                 render_tree_source = cls._driver.execute_script(
