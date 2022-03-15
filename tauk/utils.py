@@ -101,6 +101,18 @@ def get_platform_version(desired_caps):
         return None
 
 
+def validate_test_name(custom_test_name):
+    if not custom_test_name or not type(custom_test_name) is str or len(custom_test_name) == 0:
+        return None
+
+    test_name = custom_test_name.strip()
+
+    if len(test_name) >= 43:
+        return test_name[:40] + "..."
+    else:
+        return test_name
+
+
 def calculate_elapsed_time_ms(start_time, end_time):
     return int((end_time - start_time) * 1000)
 
