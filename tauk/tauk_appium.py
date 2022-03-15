@@ -4,6 +4,7 @@ import ntpath
 import logging
 import inspect
 import traceback
+from functools import partial
 from tauk.enums import TestStatusType
 from tauk.utils import (TestResult, format_appium_log, format_error, get_testcase_steps,
                         flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms,
@@ -129,7 +130,10 @@ class Tauk:
             return None
 
     @classmethod
-    def observe(cls, func):
+    def observe(cls, func=None, *, custom_test_name=None):
+
+        if func is None:
+            return partial(cls.observe, custom_test_name=custom_test_name)
 
         all_frames = inspect.stack()
         caller_frame = None
@@ -141,6 +145,9 @@ class Tauk:
                 break
 
         def invoke_test_case(*args, **kwargs):
+
+            user_provided_test_name = custom_test_name
+
             try:
                 start_time = time.perf_counter()
                 result = func(*args, **kwargs)
@@ -162,7 +169,7 @@ class Tauk:
 
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.failed.name,
-                    test_name=func.__name__,
+                    test_name=user_provided_test_name or func.__name__,
                     filename=ntpath.basename(caller_filename),
                     desired_caps=cls._get_desired_capabilities(),
                     appium_log=cls._get_log(),
@@ -194,8 +201,8 @@ class Tauk:
 
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.passed.name,
-                    test_name=func.__name__,
-                    filename=caller_filename,
+                    test_name=user_provided_test_name or func.__name__,
+                    filename=ntpath.basename(caller_filename),
                     desired_caps=cls._get_desired_capabilities(),
                     appium_log=cls._get_log(),
                     page_source=cls._get_page_source(),
@@ -209,6 +216,7 @@ class Tauk:
                 cls._test_results.append(test_result)
 
                 return result
+
         return invoke_test_case
 
     @classmethod
