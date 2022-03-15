@@ -8,7 +8,8 @@ from functools import partial
 from tauk.enums import TestStatusType
 from tauk.utils import (TestResult, format_appium_log, format_error, get_testcase_steps,
                         flatten_desired_capabilities, get_automation_type, calculate_elapsed_time_ms,
-                        get_platform_name, get_platform_version, print_modified_exception_traceback
+                        get_platform_name, get_platform_version, print_modified_exception_traceback,
+                        validate_test_name
                         )
 import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
@@ -169,7 +170,7 @@ class Tauk:
 
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.failed.name,
-                    test_name=user_provided_test_name or func.__name__,
+                    test_name=validate_test_name(user_provided_test_name) or func.__name__,
                     filename=ntpath.basename(caller_filename),
                     desired_caps=cls._get_desired_capabilities(),
                     appium_log=cls._get_log(),
@@ -201,7 +202,7 @@ class Tauk:
 
                 test_result = TestResult(
                     test_status=TestStatusType.excluded.name if cls._excluded else TestStatusType.passed.name,
-                    test_name=user_provided_test_name or func.__name__,
+                    test_name=validate_test_name(user_provided_test_name) or func.__name__,
                     filename=ntpath.basename(caller_filename),
                     desired_caps=cls._get_desired_capabilities(),
                     appium_log=cls._get_log(),
