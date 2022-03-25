@@ -20,10 +20,12 @@ class BrowserNames(Enum):
 class AutomationTypes(Enum):
     APPIUM = 'appium'
     SELENIUM = 'selenium'
+    ESPRESSO = 'espresso'
+    XCUI = 'xcui'
 
 
 @unique
-class PlatformTypes(Enum):
+class PlatformNames(Enum):
     IOS = 'ios'
     ANDROID = 'android'
     WINDOWS = 'windows'

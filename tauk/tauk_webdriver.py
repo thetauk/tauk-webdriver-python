@@ -6,9 +6,11 @@ import time
 import traceback
 from threading import Lock
 
+from tauk.context import TaukContext
 from tauk.enums import TestStatus
+from tauk.exceptions import TaukException
 from tauk.results import TaukTestResults
-from tauk.utils2.requests import RequestUtils
+from tauk.test_data import TestCase
 from tauk.utils import print_modified_exception_traceback
 
 logger = logging.getLogger('tauk')
@@ -17,59 +19,113 @@ mutex = Lock()
 
 
 class Tauk:
-    _RUN_ID = None
+    __context: TaukContext
 
-    def __init__(self, api_token, project_id) -> None:
-        self._api_token = api_token
-        self._project_id = project_id
-        # run_id = int(time.time() * 1000000)
-        if not Tauk._RUN_ID:
-            run_id = RequestUtils.initialize_run(project_id, api_token)
-            logger.info(f'[{api_token}] Setting RUN ID: {run_id}')
-            with mutex:
-                Tauk._RUN_ID = run_id
-        else:
-            logger.info(f'[{api_token}] Using existing RUN ID: {Tauk._RUN_ID}')
+    def __new__(cls, api_token, project_id):
+        with mutex:
+            if not hasattr(cls, 'instance'):
+                cls.instance = super(Tauk, cls).__new__(cls)
+                Tauk.__context = TaukContext(api_token, project_id)
+
+            return cls.instance
+
+    @classmethod
+    def get_instance(cls):
+        if not hasattr(cls, 'instance'):
+            raise Exception('Tauk is not yet initialized')
+        logger.info(f'Returning Tauk instance {cls.instance}')
+        return cls.instance
+
+    @classmethod
+    def debug_print(cls):
+        Tauk.__context.print()
+
+    @classmethod
+    def observe2(cls, func=None, *, custom_test_name=None):
         pass
 
     @classmethod
-    def observe(cls, func):
-        all_frames = inspect.stack()
-        caller_filename = None
-        for frame_info in all_frames:
-            if func.__name__ in frame_info.frame.f_code.co_names:
-                caller_filename = frame_info.filename
-                break
+    def register_driver(cls, driver, test_file_name=None, test_method_name=None):
+        logger.info(
+            f'Registering driver instance: driver {driver}, test_file_name={test_file_name}, test_method_name={test_method_name}')
+        caller_frame_records = inspect.stack()
+        register_driver_stack_index = 0
+        found_register_driver = False
 
-        def invoke_test_case(*args, **kwargs):
-            test_result = TaukTestResults(test_name=func.__name__, test_file_name=caller_filename)
+        def locate_testcase(file_name, test_name):
+            test_suite = Tauk.__context.test_data.get_test_suite(file_name)
+            if test_suite is None:
+                return None
+            test_case = test_suite.get_test_case(test_name)
+            if test_case is None:
+                return None
+            return test_case
 
-            try:
-                test_result.test_start_time = time.time()
-                result = func(*args, **kwargs)
-                test_result.test_end_time = time.time()
-                test_result.test_status = TestStatus.PASSED.value
-            except:
-                test_result.test_end_time = time.time()
-                test_result.test_status = TestStatus.FAILED.value
+        if test_file_name and test_method_name:
+            test = locate_testcase(test_file_name, test_method_name)
+            if test is None:
+                raise TaukException(f'Driver can only be registered for observed methods.'
+                                    f' Verify if {test_file_name} has @Tauk.observe decorator')
+            test.register_driver(driver)
+            return
 
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                stack_summary_list = traceback.extract_tb(exc_traceback)
-                filename, line_number, invoked_func, code_executed = None, None, None, None
-                for stack_trace in stack_summary_list:
-                    if stack_trace.filename == caller_filename:
-                        filename, line_number, invoked_func, code_executed = stack_trace
-                        break
+        for i, frame_info in enumerate(caller_frame_records):
+            # We pick the next frame after register driver
+            logger.info(f'[{i}] Checking function: {frame_info.function}')
+            if found_register_driver:
+                test_file_name = frame_info.filename
+                test_method_name = frame_info.function
+                logger.info(f'[{i}] Found: {test_file_name}, {test_method_name}')
+                test = locate_testcase(test_file_name, test_method_name)
+                if test is None:
+                    raise TaukException(f'Driver can only be registered for observed methods.'
+                                        f' Verify if {test_file_name} has @Tauk.observe decorator')
+                test.register_driver(driver)
+                return
 
-                test_result.error = (exc_value, line_number, invoked_func, code_executed)
+            if frame_info.function == 'register_driver':
+                found_register_driver = True
+                register_driver_stack_index = i
 
-                # Suppress the traceback information
-                # (only the exception type and value will be printed)
-                # and print our custom traceback information
-                print_modified_exception_traceback(exc_type, exc_value, exc_traceback, tauk_package_filename=__file__)
-                sys.tracebacklimit = 0
-                raise
-            finally:
-                logger.info(test_result.to_json())
+        raise TaukException(f'Driver can only be registered for observed methods.'
+                            f' Verify if {test_file_name} has @Tauk.observe decorator')
 
-        return invoke_test_case
+    @classmethod
+    def observe(cls, test_name=None, excluded=False):
+        print(f'test_name: {test_name}')
+
+        def inner_decorator(func):
+            testcase = TestCase()
+
+            all_frames = inspect.stack()
+            caller_filename = None
+            for frame_info in all_frames:
+                if func.__name__ in frame_info.frame.f_code.co_names:
+                    caller_filename = frame_info.filename
+                    testcase.name = func.__name__
+                    Tauk(api_token='sssdf', project_id='dsf')
+                    Tauk.__context.test_data.add_test_case(caller_filename, testcase)
+                    break
+
+            def invoke_test_case(*args, **kwargs):
+                test_result = TaukTestResults(test_name=func.__name__, test_file_name=caller_filename)
+
+                try:
+                    testcase.start_time = time.time()
+                    result = func(*args, **kwargs)
+                    testcase.end_time = time.time()
+                    testcase.capture_success_data()
+                except:
+                    testcase.end_time = time.time()
+                    testcase.capture_failure_data()
+                    testcase.capture_error(caller_filename, sys.exc_info())
+
+                    raise
+                else:
+                    return result
+                finally:
+                    Tauk.debug_print()
+
+            return invoke_test_case
+
+        return inner_decorator

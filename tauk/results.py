@@ -1,13 +1,13 @@
 import time
 
-from tauk.enums import TestStatus, BrowserNames, AutomationTypes, PlatformTypes
+from tauk.enums import TestStatus, BrowserNames, AutomationTypes, PlatformNames
 
 
 class TaukTestResults:
     _test_status: TestStatus = None
     _automation_type: AutomationTypes = None  # TODO: determine correct way to get automation type
     _language = 'Python'
-    _platform: PlatformTypes = None
+    _platform: PlatformNames = None
     _platform_version: str = None
     _browser_name: BrowserNames = None
     _browser_version: str = None
@@ -18,13 +18,15 @@ class TaukTestResults:
     _screenshot = None
     _view = None
     _code_context = None
+    _tags = {}
     _user_data = {}
 
     def __init__(self, test_name, test_file_name) -> None:
         self._test_name = test_name
         # test_file_name format my.package.name.test_file_name
         self._test_file_name = test_file_name
-        self._timezone = time.tzname[time.daylight if time.localtime().tm_isdst != 0 else 0]
+        # TODO: set timezone info
+        # self._timezone = time.tzname[time.daylight if time.localtime().tm_isdst != 0 else 0]
 
     @property
     def test_status(self):

@@ -13,6 +13,10 @@ import requests
 from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
 
+class TestStatusType:
+    pass
+
+
 class Tauk:
 
     logging.basicConfig(

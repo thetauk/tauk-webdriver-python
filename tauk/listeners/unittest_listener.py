@@ -2,6 +2,8 @@ import logging
 import sys
 import unittest
 
+from tauk.tauk_webdriver import Tauk
+
 logger = logging.getLogger('tauk')
 
 
@@ -9,6 +11,7 @@ class TaukListener(unittest.TestResult):
     def startTest(self, test: unittest.case.TestCase) -> None:
         logger.info("### startTest")
         super().startTest(test)
+        self.tauk = Tauk.get_instance()
 
     def stopTest(self, test: unittest.case.TestCase) -> None:
         super().stopTest(test)

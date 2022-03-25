@@ -1,0 +1,2 @@
+class TaukException(Exception):
+    pass
