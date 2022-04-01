@@ -52,5 +52,7 @@ class PlatformNames(Enum):
             return PlatformNames.MACOS
         elif 'windows' in name.lower():
             return PlatformNames.WINDOWS
+        elif 'linux' in name.lower():
+            return PlatformNames.LINUX
         else:
             raise TaukException(f'unable to resolve platform name {name}')
