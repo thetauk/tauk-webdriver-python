@@ -12,7 +12,7 @@ import typing
 from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus
 from tauk.exceptions import TaukException
-from tauk.utils import get_filtered_object, get_appium_server_version
+from tauk.utils import get_filtered_object, get_appium_server_version, get_browser_driver_version
 
 logger = logging.getLogger('tauk')
 
@@ -209,9 +209,7 @@ class TestCase:
         self.browser_name = self.capabilities.get('browserName', '')
         self.browser_version = self.capabilities.get('browserVersion', '')
 
-        if self.browser_name:
-            self.browser_driver_version = self.capabilities.get(self.browser_name).get(
-                f'{self.browser_name}.driverVersion')  # TODO: Verify all browser types
+        self.browser_driver_version = get_browser_driver_version(driver)
 
     def capture_screenshot(self):
         if self.driver_instance:

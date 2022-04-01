@@ -34,3 +34,17 @@ def get_appium_server_version(driver):
         except KeyError:
             pass
     return None
+
+
+def get_browser_driver_version(driver):
+    browser_name = driver.capabilities.get('browserName', '')
+    if browser_name:
+        match browser_name:
+            case 'chrome':
+                return driver.capabilities['chrome']['chromedriverVersion']
+            case 'firefox':
+                return driver.capabilities['moz:geckodriverVersion']
+            case 'msedge':
+                return driver.capabilities['msedge']['msedgedriverVersion']
+
+    return ''
