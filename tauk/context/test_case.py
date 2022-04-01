@@ -194,8 +194,8 @@ class TestCase:
         elif 'appium' in f'{type(driver)}':
             self.automation_type = AutomationTypes.APPIUM
             with suppress(Exception):
-                import appium as a
-                self.webdriver_client_version = a.__version__
+                from appium.common.helper import library_version
+                self.webdriver_client_version = library_version()
 
         # TODO: handle cases where platform name not available
         if self.automation_type is AutomationTypes.APPIUM:

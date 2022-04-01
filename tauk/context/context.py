@@ -17,8 +17,8 @@ class TaukContext:
 
     def __init__(self, api_token, project_id) -> None:
         self.api = TaukApi(api_token, project_id)
-        self.run_id = self.api.initialize_run_mock(self.test_data)
-        # self.run_id = self.api.initialize_run(self.test_data)
+        # self.run_id = self.api.initialize_run_mock(self.test_data)
+        self.run_id = self.api.initialize_run(self.test_data)
         logger.info(f'[{api_token}] Setting RUN ID: {self.run_id}')
 
     def print(self):
