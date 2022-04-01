@@ -12,7 +12,7 @@ import typing
 from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus
 from tauk.exceptions import TaukException
-from tauk.utils import get_filtered_object
+from tauk.utils import get_filtered_object, get_appium_server_version
 
 logger = logging.getLogger('tauk')
 
@@ -185,6 +185,7 @@ class TestCase:
             raise TaukException(f'Driver {type(driver)} is not of type webdriver')
         self.driver_instance = driver
         self.capabilities = driver.capabilities
+
         # Collect other data about driver
         if 'selenium' in f'{type(driver)}':
             self.automation_type = AutomationTypes.SELENIUM
@@ -196,6 +197,7 @@ class TestCase:
             with suppress(Exception):
                 from appium.common.helper import library_version
                 self.webdriver_client_version = library_version()
+                self.appium_server_version = get_appium_server_version(driver)
 
         # TODO: handle cases where platform name not available
         if self.automation_type is AutomationTypes.APPIUM:
