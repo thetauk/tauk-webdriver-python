@@ -1,11 +1,16 @@
 from enum import Enum, unique
 
+from tauk.exceptions import TaukException
+
 
 @unique
 class TestStatus(Enum):
     FAILED = 'failed'
     PASSED = 'passed'
     EXCLUDED = 'excluded'
+
+    def __getstate__(self):
+        return self.value
 
 
 @unique
@@ -15,13 +20,19 @@ class BrowserNames(Enum):
     EDGE = 'edge'
     SAFARI = 'safari'
 
+    def __getstate__(self):
+        return self.value
+
 
 @unique
 class AutomationTypes(Enum):
     APPIUM = 'appium'
     SELENIUM = 'selenium'
     ESPRESSO = 'espresso'
-    XCUI = 'xcui'
+    XCTEST = 'xctest'
+
+    def __getstate__(self):
+        return self.value
 
 
 @unique
@@ -30,4 +41,16 @@ class PlatformNames(Enum):
     ANDROID = 'android'
     WINDOWS = 'windows'
     LINUX = 'linux'
-    OSX = 'osx'
+    MACOS = 'macos'
+
+    def __getstate__(self):
+        return self.value
+
+    @classmethod
+    def resolve(cls, name: str):
+        if 'mac' in name.lower():
+            return PlatformNames.MACOS
+        elif 'windows' in name.lower():
+            return PlatformNames.WINDOWS
+        else:
+            raise TaukException(f'unable to resolve platform name {name}')

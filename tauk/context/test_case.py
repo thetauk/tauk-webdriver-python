@@ -1,54 +1,68 @@
-import inspect
-import json
 import logging
-import sys
+import re
+from contextlib import suppress
+
+import tzlocal
+import inspect
 import time
+
 import traceback
 import typing
 
+from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus
 from tauk.exceptions import TaukException
+from tauk.utils import get_filtered_object
 
 logger = logging.getLogger('tauk')
 
 
-class TestError:
-    error_type: str
-    error_msg: str
-    line_number: int
-    invoked_func: str
-    code_executed: str
-
-
 class TestCase:
-    _id: str = None
-    _name: str = None
-    _method_name: str = None
-    _status: TestStatus = None
-    _excluded: bool = False
-    _automation_type: AutomationTypes = None
-    _platform_name: PlatformNames = None
-    platform_version: str = None
-    browser_name: str = None
-    browser_version: str = None
-    _start_time: float = None
-    _end_time: float = None
-    timezone: str = None
-    _error: TestError = None
-    screenshot: str = None
-    view: str = None
-    _code_context: typing.List[object] = None
-    client_version: str = None
-    driver_version: str = None
-    appium_server_version: str = None
-    _capabilities: {} = None
-    _tags: {} = None
-    _user_data: {} = None
-    _driver_instance = None
-    is_synced: bool = None
 
     def __init__(self) -> None:
-        self.timezone = time.tzname[time.daylight if time.localtime().tm_isdst != 0 else 0]
+        self._id: str = None
+        self._custom_name: str = None
+        self._method_name: str = None
+        self._status: TestStatus = None
+        self.excluded: bool = False
+        self._automation_type: AutomationTypes = None
+        self._platform_name: PlatformNames = None
+        self.platform_version: str = None  # TODO: check
+        self.browser_name: str = None
+        self.browser_version: str = None
+        self._start_timestamp: int = None
+        self._end_timestamp: int = None
+        self.timezone: str = None  # "America/Los_Angeles"
+        self._error: TestError = None
+        self.screenshot: str = None
+        self.view: str = None
+        self._code_context: typing.List[object] = None
+        self.webdriver_client_version: str = None
+        self.browser_driver_version: str = None
+        self.appium_server_version: str = None
+        self._capabilities: {} = None
+        self._tags: {} = None
+        self._user_data: {} = None
+        self.log: typing.List[object] = None
+
+        self._driver_instance = None
+        self.is_synced: bool = None  # TODO: Figure out exact format and usecase
+
+    def __getstate__(self):
+        state = get_filtered_object(self, include_private=True,
+                                    filter_keys=[
+                                        '_driver_instance',
+                                        'is_synced',
+                                        'view',
+                                        'screenshot',
+                                        'excluded'
+                                    ])
+        if self.excluded is True:
+            self.status = TestStatus.EXCLUDED
+        return state
+
+    def __deepcopy__(self, memodict={}):
+        return self
 
     @property
     def id(self):
@@ -59,12 +73,12 @@ class TestCase:
         self._id = id
 
     @property
-    def name(self):
-        return self._name
+    def custom_name(self):
+        return self._custom_name
 
-    @name.setter
-    def name(self, name):
-        self._name = name
+    @custom_name.setter
+    def custom_name(self, custom_name):
+        self._custom_name = custom_name
 
     @property
     def method_name(self):
@@ -101,21 +115,21 @@ class TestCase:
         self._platform_name = platform_name
 
     @property
-    def start_time(self):
-        return self._start_time
+    def start_timestamp(self):
+        return self._start_timestamp
 
-    @start_time.setter
-    def start_time(self, start_time):
-        self.timezone = time.tzname[time.daylight if time.localtime().tm_isdst != 0 else 0]
-        self._start_time = start_time
+    @start_timestamp.setter
+    def start_timestamp(self, start_timestamp):
+        self.timezone = tzlocal.get_localzone_name()
+        self._start_timestamp = start_timestamp
 
     @property
-    def end_time(self):
-        return self._end_time
+    def end_timestamp(self):
+        return self._end_timestamp
 
-    @end_time.setter
-    def end_time(self, end_time):
-        self._end_time = end_time
+    @end_timestamp.setter
+    def end_timestamp(self, end_timestamp):
+        self._end_timestamp = end_timestamp
 
     @property
     def error(self):
@@ -167,18 +181,35 @@ class TestCase:
         self._driver_instance = driver_instance
 
     def register_driver(self, driver):
+        if not driver or 'webdriver' not in f'{type(driver)}':
+            raise TaukException(f'Driver {type(driver)} is not of type webdriver')
         self.driver_instance = driver
+        self.capabilities = driver.capabilities
         # Collect other data about driver
         if 'selenium' in f'{type(driver)}':
             self.automation_type = AutomationTypes.SELENIUM
+            with suppress(Exception):
+                import selenium as s
+                self.webdriver_client_version = s.__version__
         elif 'appium' in f'{type(driver)}':
             self.automation_type = AutomationTypes.APPIUM
+            with suppress(Exception):
+                import appium as a
+                self.webdriver_client_version = a.__version__
 
-        self.capabilities = driver.capabilities
-        self.platform_name = self.capabilities.get('platformName', '')  # TODO: handle cases where its not available
-        self.platform_version = self.capabilities.get('platformVersion', '')  # TODO: handle cases where its not available
+        # TODO: handle cases where platform name not available
+        if self.automation_type is AutomationTypes.APPIUM:
+            self.platform_name = PlatformNames.resolve(self.capabilities.get('platform', ''))
+        else:
+            self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
+
+        self.platform_version = self.capabilities.get('platformVersion', '')
         self.browser_name = self.capabilities.get('browserName', '')
         self.browser_version = self.capabilities.get('browserVersion', '')
+
+        if self.browser_name:
+            self.browser_driver_version = self.capabilities.get(self.browser_name).get(
+                f'{self.browser_name}.driverVersion')  # TODO: Verify all browser types
 
     def capture_screenshot(self):
         if self.driver_instance:
@@ -193,6 +224,7 @@ class TestCase:
                 # TODO: Revisit flutter because if we switch context then we have to also switch back to original
                 # if 'FLUTTER' in self.driver_instance.contexts:
                 #     self.driver_instance.switch_to.context('NATIVE_APP')
+
                 self.view = self.driver_instance.page_source
             except Exception as ex:
                 logger.error("An issue occurred while capturing view hierarchy.", exc_info=ex)
@@ -207,6 +239,7 @@ class TestCase:
                 break
 
         self.error = (exc_value, line_number, invoked_func, code_executed)
+        return line_number
 
     def capture_success_data(self):
         self.status = TestStatus.PASSED
@@ -218,7 +251,7 @@ class TestCase:
         self.capture_screenshot()
         self.capture_view_hierarchy()
 
-    def get_testcase_steps(self, testcase, error_line_number=0):
+    def capture_test_steps(self, testcase, error_line_number=0):
         testcase_source_raw = inspect.getsourcelines(testcase)
         testcase_source_clean = [step.strip() for step in testcase_source_raw[0]]
         line_number = testcase_source_raw[1]
@@ -249,116 +282,42 @@ class TestCase:
         else:
             self.code_context = output
 
+    def capture_appium_logs(self):
+        def format_appium_log(log_list):
+            output = []
+            for event in log_list:
+                # ANSI escape sequences
+                # https://bit.ly/3rK88pe
+                ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
-class TestSuite:
-    _name: str = None
-    _filename: str = None
-    _class_name: str = None
-    _test_cases: typing.List[TestCase] = []
-    language: str = 'python'
+                # Split at first event type occurence
+                # in square brackets, e.g. [HTTP]
+                # https://bit.ly/3fItHEi
+                split_log_msg = re.split(r'\[|\]', ansi_escape.sub(
+                    '', event['message']), maxsplit=2)
 
-    def __init__(self, filename) -> None:
-        self._filename = filename
+                formatted_event = {
+                    'timestamp': event.get('timestamp'),
+                    'level': event.get('level'),
+                    'type': split_log_msg[1],
+                    'message': split_log_msg[2].strip()
+                }
 
-    @property
-    def name(self):
-        return self._name
+                output.append(formatted_event)
+            return output
 
-    @name.setter
-    def name(self, name):
-        self._name = name
+        if self.automation_type != AutomationTypes.APPIUM:
+            return
 
-    @property
-    def filename(self):
-        return self._filename
+        # Get last 50 log entries
+        # minus the 5 log entries for issuing get_log()
+        slice_range = slice(-7, -5)
 
-    @filename.setter
-    def filename(self, filename):
-        self._filename = filename
+        if not self.driver_instance:
+            logger.warning('Not capturing appium logs because driver instance was not registered')
+            return
 
-    @property
-    def class_name(self):
-        return self._class_name
-
-    @class_name.setter
-    def class_name(self, class_name):
-        self._class_name = class_name
-
-    @property
-    def test_cases(self):
-        return self._test_cases
-
-    def add_testcase(self, testcase: TestCase):
-        self._test_cases.append(testcase)
-
-    def get_test_case(self, test_name) -> TestCase | None:
-        for test in self._test_cases:
-            if test.name == test_name or test.method_name == test_name:
-                return test
-        return None
-
-    def toJson(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    def print(self):
-        print(f'  name: {self.name}')
-        print(f'  filename: {self.filename}')
-        print(f'  class_name: {self.class_name}')
-        print(f'  Test Cases:')
-        for test in self.test_cases:
-            print(f'    id: {test.id}')
-            print(f'    name: {test.name}')
-            print(f'    method_name: {test.method_name}')
-            print(f'    status: {test.status}')
-            print(f'    automation_type: {test.automation_type}')
-            print(f'    platform_name: {test.platform_name}')
-            print(f'    platform_version: {test.platform_version}')
-            print(f'    browser_name: {test.browser_name}')
-            print(f'    browser_version: {test.browser_version}')
-            print(f'    start_time: {test.start_time}')
-            print(f'    end_time: {test.end_time}')
-            print(f'    timezone: {test.timezone}')
-            print(f'    error: {test.error}')
-            # print(f'    screenshot: {len(test.screenshot)}')
-            # print(f'    view: {len(test.view)}')
-            print(f'    code_context: {test.code_context}')
-            print(f'    client_version: {test.client_version}')
-            print(f'    driver_version: {test.driver_version}')
-            print(f'    appium_server_version: {test.appium_server_version}')
-            print(f'    capabilities: {test.capabilities}')
-            print(f'    tags: {test.tags}')
-            print(f'    user_data: {test.user_data}')
-            print(f'    is_synced: {test.is_synced}')
-
-
-class TestData:
-    init_time: float
-    _test_suites: typing.List[TestSuite] = []
-
-    def __init__(self) -> None:
-        self.init_time = time.time()
-
-    @property
-    def test_suites(self):
-        return self._test_suites
-
-    def get_test_suite(self, filename) -> TestSuite | None:
-        for suite in self._test_suites:
-            if suite.filename == filename:
-                return suite
-        return None
-
-    def add_test_case(self, filename: str, testcase: TestCase):
-        # Ex: '/Users/aj/tauk/tauk-webdriver-python/tests/e2e/custom_integration_test.py'
-        suite = self.get_test_suite(filename)
-        if suite is None:
-            suite = TestSuite(filename)
-            self._test_suites.append(suite)
-
-        suite.add_testcase(testcase)
-
-    def print(self):
-        print(f'init_time: {self.init_time}')
-        print('Test Suites:')
-        for suite in self.test_suites:
-            suite.print()
+        try:
+            self.log = format_appium_log(self.driver_instance.get_log('server')[slice_range])
+        except Exception as ex:
+            logger.error('An issue occurred while requesting the Appium server logs.', exc_info=ex)

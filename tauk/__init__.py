@@ -4,8 +4,6 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from tauk.tauk_appium import Tauk
-
 __project__ = "tauk"
 __version__ = "develop"
 __author__ = "Nathan Krishnan"
@@ -27,7 +25,10 @@ def _init_logger():
     os.makedirs(os.path.dirname(log_filename), exist_ok=True)
 
     tauk_logger = logging.getLogger('tauk')
-    tauk_logger.setLevel(logging.INFO)
+    log_level = os.getenv('TAUK_LOG_LEVEL', 'INFO')
+    if log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+        log_level = 'INFO'
+    tauk_logger.setLevel(logging.getLevelName(log_level))
     formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
 
     file_handler = RotatingFileHandler(log_filename, maxBytes=10000000, backupCount=3)

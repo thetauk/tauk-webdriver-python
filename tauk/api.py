@@ -1,47 +1,54 @@
 import logging
-import time
+from datetime import datetime
 
 import requests
+
+from tauk.context.test_data import TestData
+from tauk.exceptions import TaukException
 
 logger = logging.getLogger('tauk')
 
 
-def post(url, payload, headers):
-    return requests.post(
-        url,
-        json=payload,
-        headers=headers
-    )
-
-
 class TaukApi:
-    _API_URL = 'http://localhost:5000/api/v1'
+    # _API_URL = 'http://localhost:5000/api/v1'
+    _API_URL = 'https://requestinspector.com/inspect/01fzc1zd7xkp766hw753525sv1'
+    run_id: str = None
 
-    # _API_URL = 'https://requestinspector.com/inspect/01fvhhd8vg2sfd6hpn3c77rd7e'
+    def __init__(self, api_token, project_id):
+        self._api_token = api_token
+        self._project_id = project_id
 
-    @staticmethod
-    def initialize_run_mock(api_token, project_id):
-        return 'runid-dfg'
+    def initialize_run_mock(self, test_data):
+        self.run_id = 'runid-dfg'
+        return self.run_id
 
-    @staticmethod
-    def initialize_run(api_token, project_id):
-        url = f'${TaukApi._API_URL}/execution/${project_id}/initialize'
+    def initialize_run(self, test_data: TestData):
+        url = f'{TaukApi._API_URL}/execution/{self._project_id}/initialize'
         body = {
-            'timestamp': round(int(time.time() * 1000))
+            'language': test_data.language,
+            'tauk_client_version': test_data.tauk_client_version,
+            'start_timestamp': int(datetime.utcnow().timestamp() * 1000),
+            'timezone': test_data.timezone,
+            'dst': test_data.dst
         }
 
         headers = {
-            'Authorization': f'Bearer {api_token}'
+            'Authorization': f'Bearer {self._api_token}'
         }
 
-        r = post(url, body, headers)
-        logger.info(f'Response: {r.json()}')
-        # TODO: Validate response code
-        return r.json()['run_id']
+        logger.debug(f'Initializing run with: url[{url}], headers[{headers}], body[{body}]')
+        response = requests.post(url, json=body, headers=headers)
+        if response.status_code != 200:
+            logger.error(f'Failed to initialize Tauk execution. Response: {response.text}')
+            raise TaukException('failed to initialize tauk execution')
 
-    @staticmethod
-    def test_start(api_token, project_id, run_id, test_name, file_name, start_time):
-        url = f'${TaukApi._API_URL}/api/v1/execution/${project_id}/${run_id}/report/test/start'
+        logger.debug(f'Response: {response.text}')
+        self.run_id = response.json()['run_id']
+        logger.info(f'Setting run ID for current execution as {self.run_id}')
+        return self.run_id
+
+    def test_start(self, test_name, file_name, start_time):
+        url = f'{TaukApi._API_URL}/api/v1/execution/{self._project_id}/{self.run_id}/report/test/start'
         body = {
             'test_name': test_name,
             'file_name': file_name,
@@ -49,17 +56,16 @@ class TaukApi:
         }
 
         headers = {
-            'Authorization': f'Bearer {api_token}'
+            'Authorization': f'Bearer {self._api_token}'
         }
 
-        r = post(url, body, headers)
+        r = requests.post(url, body, headers)
         logger.info(f'Response: {r.json()}')
         # TODO: Validate response code
         return r.json()['test_id']
 
-    @staticmethod
-    def test_finish(api_token, project_id, run_id, test_name, file_name, start_time, end_time):
-        url = f'${TaukApi._API_URL}/api/v1/execution/${project_id}/${run_id}/report/test/finish'
+    def test_finish(self, test_name, file_name, start_time, end_time):
+        url = f'{TaukApi._API_URL}/api/v1/execution/{self._project_id}/{self.run_id}/report/test/finish'
         body = {
             'test_name': test_name,
             'file_name': file_name,
@@ -68,29 +74,26 @@ class TaukApi:
         }
 
         headers = {
-            'Authorization': f'Bearer {api_token}'
+            'Authorization': f'Bearer {self._api_token}'
         }
 
-        r = post(url, body, headers)
+        r = requests.post(url, body, headers)
         logger.info(f'Response: {r.json()}')
         # TODO: Validate response code
         return r.json()['test_id']
 
-    @staticmethod
-    def upload(api_token, project_id, run_id, test_name, file_name, start_time):
-        url = f'${TaukApi._API_URL}/api/v1/execution/${project_id}/${run_id}/report/upload'
-        body = {
-            'test_name': test_name,
-            'file_name': file_name,
-            'start_time': start_time,
-            'run_id': run_id
-        }
+    def upload(self, test_data):
+        url = f'{TaukApi._API_URL}/api/v1/execution/${self._project_id}/{self.run_id}/report/upload'
+        body = test_data
 
         headers = {
-            'Authorization': f'Bearer {api_token}'
+            'Authorization': f'Bearer {self._api_token}'
         }
 
-        r = post(url, body, headers)
-        logger.info(f'Response: {r.json()}')
-        # TODO: Validate response code
-        return r.json()['test_id']
+        logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{body}]')
+        response = requests.post(url, body, headers)
+        if response.status_code != 200:
+            logger.error(f'Failed to upload test. Response: {response.text}')
+            raise TaukException('failed to initialize tauk execution')
+
+        logger.debug(f'Response: {response.text}')
