@@ -10,8 +10,8 @@ logger = logging.getLogger('tauk')
 
 
 class TaukApi:
-    # _API_URL = 'http://localhost:5000/api/v1'
-    _API_URL = 'https://requestinspector.com/inspect/01fzc1zd7xkp766hw753525sv1'
+    _API_URL = 'http://localhost:5000/api/v1'
+    # _API_URL = 'https://requestinspector.com/inspect/01fzc1zd7xkp766hw753525sv1'
     run_id: str = None
 
     def __init__(self, api_token, project_id):
@@ -83,7 +83,7 @@ class TaukApi:
         return r.json()['test_id']
 
     def upload(self, test_data):
-        url = f'{TaukApi._API_URL}/api/v1/execution/${self._project_id}/{self.run_id}/report/upload'
+        url = f'{TaukApi._API_URL}/api/v1/execution/{self._project_id}/{self.run_id}/report/upload'
         body = test_data
 
         headers = {
@@ -94,6 +94,6 @@ class TaukApi:
         response = requests.post(url, body, headers)
         if response.status_code != 200:
             logger.error(f'Failed to upload test. Response: {response.text}')
-            raise TaukException('failed to initialize tauk execution')
+            raise TaukException('failed to upload test results')
 
         logger.debug(f'Response: {response.text}')
