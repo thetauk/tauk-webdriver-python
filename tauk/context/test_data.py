@@ -3,13 +3,11 @@ import time
 import typing
 from datetime import datetime
 
-import jsonpickle
 import tzlocal
 
 import tauk
 from tauk.context.test_case import TestCase
 from tauk.context.test_suite import TestSuite
-from tauk.exceptions import TaukException
 from tauk.utils import get_filtered_object
 
 logger = logging.getLogger('tauk')
@@ -41,29 +39,9 @@ class TestData:
         return None
 
     def add_test_case(self, filename: str, testcase: TestCase):
-        # Ex: '/Users/aj/tauk/tauk-webdriver-python/tests/e2e/custom_integration_test.py'
         suite = self.get_test_suite(filename)
         if suite is None:
             suite = TestSuite(filename)
             self._test_suites.append(suite)
 
         suite.add_testcase(testcase)
-
-    # def get_json_test_data(self, test_suite_filename, test_method_name):
-    #     suite = self.get_test_suite(test_suite_filename)
-    #     if not suite:
-    #         raise TaukException(f'Could not find suite with filename {test_suite_filename}')
-    #
-    #     suite_copy = copy.deepcopy(suite)
-    #     # Clean up tests
-    #     for test in suite_copy.test_cases:
-    #         if test.method_name != test_method_name:
-    #             suite_copy.test_cases.remove(test)
-    #
-    #     json_data = {
-    #         "test_suites": [
-    #             suite_copy
-    #         ]
-    #     }
-    #
-    #     return jsonpickle.encode(json_data, unpicklable=False, indent=3)

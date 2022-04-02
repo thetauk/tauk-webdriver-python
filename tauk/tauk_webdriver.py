@@ -3,11 +3,8 @@ import inspect
 import logging
 import os
 import sys
-import time
 from datetime import datetime
 from threading import Lock
-
-import jsonpickle
 
 from tauk.context.context import TaukContext
 from tauk.exceptions import TaukException
@@ -115,6 +112,8 @@ class Tauk:
             caller_filename = None
             for frame_info in all_frames:
                 if func.__name__ in frame_info.frame.f_code.co_names:
+                    # TODO: use relative path
+                    # caller_filename = frame_info.filename.replace(os.getcwd(), '')
                     caller_filename = frame_info.filename
                     test_case.method_name = func.__name__
                     Tauk() if not Tauk.is_initialized() else None
