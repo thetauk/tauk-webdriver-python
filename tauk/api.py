@@ -48,7 +48,7 @@ class TaukApi:
         return self.run_id
 
     def test_start(self, test_name, file_name, start_time):
-        url = f'{TaukApi._API_URL}/api/v1/execution/{self._project_id}/{self.run_id}/report/test/start'
+        url = f'{TaukApi._API_URL}/execution/{self._project_id}/{self.run_id}/report/test/start'
         body = {
             'test_name': test_name,
             'file_name': file_name,
@@ -59,13 +59,13 @@ class TaukApi:
             'Authorization': f'Bearer {self._api_token}'
         }
 
-        r = requests.post(url, body, headers)
-        logger.info(f'Response: {r.json()}')
+        response = requests.post(url, json=body, headers=headers)
+        logger.info(f'Response: {response.json()}')
         # TODO: Validate response code
-        return r.json()['test_id']
+        return response.json()['test_id']
 
     def test_finish(self, test_name, file_name, start_time, end_time):
-        url = f'{TaukApi._API_URL}/api/v1/execution/{self._project_id}/{self.run_id}/report/test/finish'
+        url = f'{TaukApi._API_URL}/execution/{self._project_id}/{self.run_id}/report/test/finish'
         body = {
             'test_name': test_name,
             'file_name': file_name,
@@ -77,21 +77,22 @@ class TaukApi:
             'Authorization': f'Bearer {self._api_token}'
         }
 
-        r = requests.post(url, body, headers)
-        logger.info(f'Response: {r.json()}')
+        response = requests.post(url, json=body, headers=headers)
+        logger.info(f'Response: {response.json()}')
         # TODO: Validate response code
         return r.json()['test_id']
 
     def upload(self, test_data):
-        url = f'{TaukApi._API_URL}/api/v1/execution/{self._project_id}/{self.run_id}/report/upload'
+        url = f'{TaukApi._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
         body = test_data
 
         headers = {
-            'Authorization': f'Bearer {self._api_token}'
+            'Authorization': f'Bearer {self._api_token}',
+            'Content-Type': 'application/json'
         }
 
         logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{body}]')
-        response = requests.post(url, body, headers)
+        response = requests.post(url, data=body, headers=headers)
         if response.status_code != 200:
             logger.error(f'Failed to upload test. Response: {response.text}')
             raise TaukException('failed to upload test results')

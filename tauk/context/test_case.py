@@ -4,7 +4,6 @@ from contextlib import suppress
 
 import tzlocal
 import inspect
-import time
 
 import traceback
 import typing
@@ -53,8 +52,6 @@ class TestCase:
                                     filter_keys=[
                                         '_driver_instance',
                                         'is_synced',
-                                        'view',
-                                        'screenshot',
                                         'excluded'
                                     ])
         if self.excluded is True:
@@ -238,7 +235,13 @@ class TestCase:
                 filename, line_number, invoked_func, code_executed = stack_trace
                 break
 
-        self.error = (exc_value, line_number, invoked_func, code_executed)
+        self.error = {
+            'error_type': exc_value.__class__.__name__,
+            'error_msg': str(exc_value),
+            'line_number': line_number,
+            'invoked_func': invoked_func,
+            'code_executed': code_executed
+        }
         return line_number
 
     def capture_success_data(self):
