@@ -23,6 +23,7 @@ __extra_requires__ = {
 def _init_logger():
     log_filename = os.path.join(Path.home(), '.tauk', 'logs', 'tauk-webdriver.log')
     os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+    os.environ['TAUK_HOME'] = os.path.join(Path.home(), '.tauk')
 
     tauk_logger = logging.getLogger('tauk')
     log_level = os.getenv('TAUK_LOG_LEVEL', 'INFO')

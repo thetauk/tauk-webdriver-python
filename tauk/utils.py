@@ -1,4 +1,5 @@
 import logging
+import re
 import typing
 
 import requests
@@ -48,3 +49,10 @@ def get_browser_driver_version(driver):
                 return driver.capabilities['msedge']['msedgedriverVersion']
 
     return ''
+
+
+def shortened_json(json_text):
+    json_text = re.sub(r'"screenshot": ".+?"', '"screenshot" : "stripped"', json_text, flags=re.DOTALL)
+    json_text = re.sub(r'"view": ".+?", ', '"view" : "stripped", ', json_text, flags=re.DOTALL)
+    json_text = re.sub(r'"log": \[.+?}\], "', '"log": ["stripped"], "', json_text, flags=re.DOTALL)
+    return json_text

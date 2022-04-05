@@ -1,28 +1,30 @@
 import logging
+import os
 from datetime import datetime
 
 import requests
 
 from tauk.context.test_data import TestData
 from tauk.exceptions import TaukException
+from tauk.utils import shortened_json
 
 logger = logging.getLogger('tauk')
 
 
 class TaukApi:
-    _API_URL = 'http://localhost:5000/api/v1'
-    # _API_URL = 'https://requestinspector.com/inspect/01fzc1zd7xkp766hw753525sv1'
+    _API_URL = 'https://www.tauk.com/api/v1'
     run_id: str = None
 
     def __init__(self, api_token, project_id):
+        self._API_URL = os.environ.get('TAUK_API_URL', self._API_URL)
         self._api_token = api_token
         self._project_id = project_id
 
-    def initialize_run_mock(self, test_data):
-        self.run_id = 'runid-dfg'
+    def initialize_run_mock(self, test_data, run_id=None):
+        self.run_id = '5d917db6-cf5d-4f30-8303-6eefc35e7558'
         return self.run_id
 
-    def initialize_run(self, test_data: TestData):
+    def initialize_run(self, test_data: TestData, run_id: str = None):
         url = f'{TaukApi._API_URL}/execution/{self._project_id}/initialize'
         body = {
             'language': test_data.language,
@@ -31,6 +33,9 @@ class TaukApi:
             'timezone': test_data.timezone,
             'dst': test_data.dst
         }
+
+        if run_id:
+            body['run_id'] = run_id
 
         headers = {
             'Authorization': f'Bearer {self._api_token}'
@@ -91,7 +96,7 @@ class TaukApi:
             'Content-Type': 'application/json'
         }
 
-        logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{body}]')
+        logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{shortened_json(body)}]')
         response = requests.post(url, data=body, headers=headers)
         if response.status_code != 200:
             logger.error(f'Failed to upload test. Response: {response.text}')
