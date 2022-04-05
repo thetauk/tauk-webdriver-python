@@ -314,7 +314,7 @@ class TestCase:
 
         # Get last 50 log entries
         # minus the 5 log entries for issuing get_log()
-        slice_range = slice(-7, -5)
+        slice_range = slice(-55, -5)
 
         if not self.driver_instance:
             logger.warning('Not capturing appium logs because driver instance was not registered')

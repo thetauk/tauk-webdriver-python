@@ -18,7 +18,7 @@ mutex = Lock()
 class Tauk:
     __context: TaukContext
 
-    def __new__(cls, api_token=None, project_id=None, multi_process=False):
+    def __new__(cls, api_token=None, project_id=None, multi_process=False, ):
         with mutex:
             if not hasattr(cls, 'instance'):
                 cls.instance = super(Tauk, cls).__new__(cls)
@@ -26,10 +26,11 @@ class Tauk:
                     logger.info('Looking for API token and project ID in environment variables')
                     api_token = os.getenv('TAUK_API_TOKEN')
                     project_id = os.getenv('TAUK_PROJECT_ID')
+                    multi_process = os.getenv('TAUK_MULTI_PROCESS', 'false').lower().strip() == "true"
 
                 if not api_token or not project_id:
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
-                Tauk.__context = TaukContext(api_token, project_id)
+                Tauk.__context = TaukContext(api_token, project_id, multi_process=multi_process)
 
             return cls.instance
 
