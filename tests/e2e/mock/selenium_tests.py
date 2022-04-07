@@ -37,7 +37,7 @@ class TestDataTest(unittest.TestCase):
     @Tauk.observe(custom_test_name='custom name')
     def test_success_test_case_data(self):
         options = Options()
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
         self.driver = webdriver.Chrome(options=options)
         Tauk.register_driver(self.driver)
         self.driver.get('https://www.tauk.com')
