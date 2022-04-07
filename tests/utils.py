@@ -9,16 +9,21 @@ from tauk.tauk_webdriver import Tauk
 
 
 def mock(urls: typing.List[str], json_responses: typing.List[object], statuses: typing.List[int]):
-    responses.RequestsMock()
-    responses.start()
     if not isinstance(urls, list) or not isinstance(json_responses, list) or not isinstance(statuses, list):
         raise TaukException('arguments to mock method must be of list type of same size')
 
     if not (len(urls) == len(json_responses) == len(statuses)):
         raise TaukException('arguments to mock method must be of list type of same size')
 
+    responses.RequestsMock()
+    responses.start()
+
     for i, url in enumerate(urls):
         responses.add(responses.POST, url, json=json_responses[i], status=statuses[i])
+
+    api_token = os.getenv('TAUK_API_TOKEN', 'api-token')
+    project_id = os.getenv('TAUK_PROJECT_ID', 'project-id')
+    Tauk(api_token=api_token, project_id=project_id)
 
     def inner_decorator(func):
         caller_filename = None

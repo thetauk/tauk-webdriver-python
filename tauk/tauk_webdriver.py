@@ -21,6 +21,8 @@ class Tauk:
     def __new__(cls, api_token=None, project_id=None, multi_process_run=False):
         with mutex:
             if not hasattr(cls, 'instance'):
+                logger.debug(f'Creating new Tauk instance with api_token={api_token}, project_id={project_id}, '
+                             f'multi_process_run={multi_process_run}')
                 cls.instance = super(Tauk, cls).__new__(cls)
                 if not api_token or not project_id:
                     logger.info('Looking for API token and project ID in environment variables')

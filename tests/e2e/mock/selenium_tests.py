@@ -15,12 +15,7 @@ from tauk.tauk_webdriver import Tauk
 from tests.utils import mock
 
 
-# Tauk(api_token='api_token', project_id='project_id')
-
-
 class TestDataTest(unittest.TestCase):
-    api_token = 'api-token'
-    project_id = 'project-id'
     expected_run_id = '6d917db6-cf5d-4f30-8303-6eefc35e7558'
 
     def setUp(self) -> None:
@@ -30,8 +25,8 @@ class TestDataTest(unittest.TestCase):
         if hasattr(self, 'driver') and self.driver:
             self.driver.quit()
 
-    @mock(urls=[f'https://www.tauk.com/api/v1/execution/{project_id}/initialize',
-                f'https://www.tauk.com/api/v1/execution/{project_id}/{expected_run_id}/report/upload'],
+    @mock(urls=[f'https://www.tauk.com/api/v1/execution/project-id/initialize',
+                f'https://www.tauk.com/api/v1/execution/project-id/{expected_run_id}/report/upload'],
           json_responses=[{'run_id': expected_run_id, 'message': 'success'}, {'message': 'success'}],
           statuses=[200, 200])
     @Tauk.observe(custom_test_name='custom name')
