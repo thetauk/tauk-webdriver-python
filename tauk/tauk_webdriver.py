@@ -3,7 +3,7 @@ import inspect
 import logging
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Lock
 
 from tauk.context.context import TaukContext
@@ -18,7 +18,7 @@ mutex = Lock()
 class Tauk:
     __context: TaukContext
 
-    def __new__(cls, api_token=None, project_id=None, multi_process=False, ):
+    def __new__(cls, api_token=None, project_id=None, multi_process_run=False):
         with mutex:
             if not hasattr(cls, 'instance'):
                 cls.instance = super(Tauk, cls).__new__(cls)
@@ -26,11 +26,11 @@ class Tauk:
                     logger.info('Looking for API token and project ID in environment variables')
                     api_token = os.getenv('TAUK_API_TOKEN')
                     project_id = os.getenv('TAUK_PROJECT_ID')
-                    multi_process = os.getenv('TAUK_MULTI_PROCESS', 'false').lower().strip() == "true"
+                    multi_process_run = os.getenv('TAUK_MULTI_PROCESS', 'false').lower().strip() == "true"
 
                 if not api_token or not project_id:
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
-                Tauk.__context = TaukContext(api_token, project_id, multi_process=multi_process)
+                Tauk.__context = TaukContext(api_token, project_id, multi_process_run=multi_process_run)
 
             return cls.instance
 
@@ -68,6 +68,10 @@ class Tauk:
     def register_driver(cls, driver, test_file_name=None, test_method_name=None):
         logger.info(f'Registering driver instance: '
                     f'driver=[{driver}], test_file_name=[{test_file_name}], test_method_name=[{test_method_name}]')
+
+        if not Tauk.is_initialized():
+            raise TaukException('Cannot register driver from a method which is not observed')
+
         caller_frame_records = inspect.stack()
         register_driver_stack_index = 0
         found_register_driver = False
@@ -83,7 +87,7 @@ class Tauk:
         for i, frame_info in enumerate(caller_frame_records):
             # We pick the next frame after register driver
             if found_register_driver:
-                test_file_name = frame_info.filename
+                test_file_name = frame_info.filename.replace(os.getcwd(), '')
                 test_method_name = frame_info.function
                 test = Tauk._get_testcase(test_file_name, test_method_name)
                 if test is None:
@@ -113,9 +117,7 @@ class Tauk:
             caller_filename = None
             for frame_info in all_frames:
                 if func.__name__ in frame_info.frame.f_code.co_names:
-                    # TODO: use relative path
-                    # caller_filename = frame_info.filename.replace(os.getcwd(), '')
-                    caller_filename = frame_info.filename
+                    caller_filename = frame_info.filename.replace(os.getcwd(), '')
                     test_case.method_name = func.__name__
                     Tauk() if not Tauk.is_initialized() else None
                     Tauk.__context.test_data.add_test_case(caller_filename, test_case)
@@ -123,12 +125,12 @@ class Tauk:
 
             def invoke_test_case(*args, **kwargs):
                 try:
-                    test_case.start_timestamp = int(datetime.utcnow().timestamp() * 1000)
+                    test_case.start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     result = func(*args, **kwargs)
-                    test_case.end_timestamp = int(datetime.utcnow().timestamp() * 1000)
+                    test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     test_case.capture_success_data()
                 except:
-                    test_case.end_time = int(datetime.utcnow().timestamp() * 1000)
+                    test_case.end_time = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     test_case.capture_failure_data()
                     error_line_number = test_case.capture_error(caller_filename, sys.exc_info())
                     test_case.capture_test_steps(testcase=func, error_line_number=error_line_number)
@@ -140,7 +142,6 @@ class Tauk:
                 finally:
                     test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
-                    # print(Tauk.__context.get_json_test_data(caller_filename, testcase.method_name))
                     Tauk.__context.api.upload(Tauk.__context.get_json_test_data(caller_filename, test_case.method_name))
 
             return invoke_test_case
@@ -168,7 +169,7 @@ class Tauk:
             # We pick the next frame after register driver
             logger.info(f'[{i}] Checking function: {frame_info.function}')
             if found_register_driver:
-                test_file_name = frame_info.filename
+                test_file_name = frame_info.filename.replace(os.getcwd(), '')
                 test_method_name = frame_info.function
                 logger.info(f'[{i}] Found: {test_file_name}, {test_method_name}')
                 test = Tauk._get_testcase(test_file_name, test_method_name)

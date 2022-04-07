@@ -18,9 +18,9 @@ class TaukContext:
     run_id: str
     api: TaukApi
 
-    def __init__(self, api_token, project_id, multi_process=False):
-        self.api = TaukApi(api_token, project_id)
-        if multi_process:
+    def __init__(self, api_token, project_id, multi_process_run=False):
+        self.api = TaukApi(api_token, project_id, multi_process_run)
+        if multi_process_run:
             self._setup_execution_file()
             return
         else:
