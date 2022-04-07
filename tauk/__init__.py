@@ -27,9 +27,9 @@ def _init_logger():
 
     tauk_logger = logging.getLogger('tauk')
     log_level = os.getenv('TAUK_LOG_LEVEL', 'INFO')
-    if log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+    if log_level.upper() not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
         log_level = 'INFO'
-    tauk_logger.setLevel(logging.getLevelName(log_level))
+    tauk_logger.setLevel(logging.getLevelName(log_level.upper()))
     formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
 
     file_handler = RotatingFileHandler(log_filename, maxBytes=10000000, backupCount=3)
