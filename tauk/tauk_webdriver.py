@@ -89,12 +89,13 @@ class Tauk:
         for i, frame_info in enumerate(caller_frame_records):
             # We pick the next frame after register driver
             if found_register_driver:
-                test_file_name = frame_info.filename.replace(os.getcwd(), '')
+                test_file_name = frame_info.filename
+                test_relative_file_name = test_file_name.replace(f'{os.getcwd()}{os.sep}', '')
                 test_method_name = frame_info.function
-                test = Tauk._get_testcase(test_file_name, test_method_name)
+                test = Tauk._get_testcase(test_relative_file_name, test_method_name)
                 if test is None:
-                    raise TaukException(f'Driver can only be registered for observed methods.'
-                                        f' Verify if {test_file_name} has @Tauk.observe decorator')
+                    raise TaukException(f'1. Driver can only be registered for observed methods.'
+                                        f' Verify if {test_relative_file_name} has @Tauk.observe decorator')
                 test.register_driver(driver)
                 return
 
@@ -102,7 +103,7 @@ class Tauk:
                 found_register_driver = True
                 register_driver_stack_index = i
 
-        raise TaukException(f'Driver can only be registered for observed methods.'
+        raise TaukException(f'2. Driver can only be registered for observed methods.'
                             f' Verify if {test_file_name} has @Tauk.observe decorator')
 
     @classmethod
@@ -117,12 +118,14 @@ class Tauk:
 
             all_frames = inspect.stack()
             caller_filename = None
+            caller_relative_filename = None
             for frame_info in all_frames:
                 if func.__name__ in frame_info.frame.f_code.co_names:
-                    caller_filename = frame_info.filename.replace(os.getcwd(), '')
+                    caller_filename = frame_info.filename
+                    caller_relative_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
                     test_case.method_name = func.__name__
                     Tauk() if not Tauk.is_initialized() else None
-                    Tauk.__context.test_data.add_test_case(caller_filename, test_case)
+                    Tauk.__context.test_data.add_test_case(caller_relative_filename, test_case)
                     break
 
             def invoke_test_case(*args, **kwargs):
@@ -144,7 +147,7 @@ class Tauk:
                 finally:
                     test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
-                    Tauk.__context.api.upload(Tauk.__context.get_json_test_data(caller_filename, test_case.method_name))
+                    Tauk.__context.api.upload(Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name))
 
             return invoke_test_case
 

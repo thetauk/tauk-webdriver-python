@@ -86,7 +86,7 @@ class TaukApi:
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
         # TODO: Validate response code
-        return r.json()['test_id']
+        return response.json()['test_id']
 
     def upload(self, test_data):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
