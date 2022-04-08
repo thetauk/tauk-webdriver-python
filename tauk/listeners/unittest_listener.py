@@ -51,6 +51,6 @@ class TaukListener(unittest.TestResult):
         logger.info("### addUnexpectedSuccess")
 
     def addSubTest(self, test: unittest.case.TestCase, subtest: unittest.case.TestCase,
-                   err: tuple | None) -> None:
+                   err: tuple) -> None:
         super().addSubTest(test, subtest, err)
         logger.info("### addSubTest")

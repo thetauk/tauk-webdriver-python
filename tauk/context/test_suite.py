@@ -49,7 +49,7 @@ class TestSuite:
     def add_testcase(self, testcase: TestCase):
         self.test_cases.append(testcase)
 
-    def get_test_case(self, test_name) -> TestCase | None:
+    def get_test_case(self, test_name) -> TestCase:
         for test in self.test_cases:
             if test.custom_name == test_name or test.method_name == test_name:
                 return test
