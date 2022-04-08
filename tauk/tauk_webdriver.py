@@ -135,7 +135,7 @@ class Tauk:
                     test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     test_case.capture_success_data()
                 except:
-                    test_case.end_time = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+                    test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     test_case.capture_failure_data()
                     error_line_number = test_case.capture_error(caller_filename, sys.exc_info())
                     test_case.capture_test_steps(testcase=func, error_line_number=error_line_number)
