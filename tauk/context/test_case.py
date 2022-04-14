@@ -231,7 +231,7 @@ class TestCase:
         stack_summary_list = traceback.extract_tb(exc_traceback)
         filename, line_number, invoked_func, code_executed = None, None, None, None
         for stack_trace in stack_summary_list:
-            if stack_trace.filename == caller_filename:
+            if caller_filename in stack_trace.filename:
                 filename, line_number, invoked_func, code_executed = stack_trace
                 break
 
