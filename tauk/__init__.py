@@ -30,7 +30,8 @@ def _init_logger():
     if log_level.upper() not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
         log_level = 'INFO'
     tauk_logger.setLevel(logging.getLevelName(log_level.upper()))
-    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
+    formatter = logging.Formatter(fmt='%(asctime)s [%(process)d-%(threadName)s] %(levelname)s %(message)s',
+                                  datefmt='%Y-%m-%dT%H:%M:%S%z')
 
     file_handler = RotatingFileHandler(log_filename, maxBytes=10000000, backupCount=3)
     file_handler.setFormatter(formatter)
