@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import requests
 
+import tauk
 from tauk.context.test_data import TestData
 from tauk.exceptions import TaukException
 from tauk.utils import shortened_json
@@ -19,6 +20,16 @@ class TaukApi:
         self._api_token = api_token
         self._project_id = project_id
         self._multi_process_run = multi_process_run
+
+    def set_token(self, api_token, project_id):
+        self._api_token = api_token
+        self._project_id = project_id
+
+    def get_api_token(self):
+        return self._api_token
+
+    def get_project_id(self):
+        return self._project_id
 
     def initialize_run_mock(self, test_data, run_id=None):
         self.run_id = '5d917db6-cf5d-4f30-8303-6eefc35e7558'
@@ -50,6 +61,11 @@ class TaukApi:
 
         logger.debug(f'Response: {response.text}')
         self.run_id = response.json()['run_id']
+        latest_client_versions = response.json().get('latest_tauk_client_version', tauk.__version__)
+        if tauk.__version__ != 'develop' and latest_client_versions != tauk.__version__:
+            logger.warning(f'You are currently using Tauk [{tauk.__version__}]. '
+                           f'Consider updating to latest version [{latest_client_versions}] using '
+                           f'"pip install -U tauk"')
         logger.info(f'Setting run ID for current execution as {self.run_id}')
         return self.run_id
 
