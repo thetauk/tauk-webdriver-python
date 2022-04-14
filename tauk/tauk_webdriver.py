@@ -1,4 +1,5 @@
 """Helper package to facilitate reporting for webdriver-based tests on Tauk"""
+import atexit
 import inspect
 import logging
 import os
@@ -16,11 +17,12 @@ mutex = Lock()
 
 
 class Tauk:
+    instance = None
     __context: TaukContext
 
     def __new__(cls, api_token=None, project_id=None, multi_process_run=False):
         with mutex:
-            if not hasattr(cls, 'instance'):
+            if Tauk.instance is None:
                 logger.debug(f'Creating new Tauk instance with api_token={api_token}, project_id={project_id}, '
                              f'multi_process_run={multi_process_run}')
                 cls.instance = super(Tauk, cls).__new__(cls)
@@ -28,21 +30,24 @@ class Tauk:
                     logger.info('Looking for API token and project ID in environment variables')
                     api_token = os.getenv('TAUK_API_TOKEN')
                     project_id = os.getenv('TAUK_PROJECT_ID')
-                    multi_process_run = os.getenv('TAUK_MULTI_PROCESS', 'false').lower().strip() == "true"
+                    multi_process_run = os.getenv('TAUK_MULTI_PROCESS', f'{multi_process_run}').lower().strip() == "true"
 
-                if not api_token or not project_id:
+                if not multi_process_run and (not api_token or not project_id):
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
                 Tauk.__context = TaukContext(api_token, project_id, multi_process_run=multi_process_run)
+
+                if multi_process_run:
+                    atexit.register(Tauk.destroy)
 
             return cls.instance
 
     @classmethod
     def is_initialized(cls):
-        return True if hasattr(cls, 'instance') else False
+        return False if Tauk.instance is None else True
 
     @classmethod
     def get_instance(cls):
-        if not hasattr(cls, 'instance'):
+        if Tauk.instance is None:
             raise Exception('Tauk is not yet initialized')
         logger.info(f'Returning Tauk instance {cls.instance}')
         return cls.instance
@@ -51,10 +56,6 @@ class Tauk:
     @classmethod
     def get_context(cls):
         return Tauk.__context
-
-    @classmethod
-    def debug_print(cls):
-        Tauk.__context.print()
 
     @classmethod
     def _get_testcase(cls, file_name, test_name):
@@ -66,6 +67,14 @@ class Tauk:
             return None
         return test_case
 
+    @classmethod
+    def destroy(cls):
+        if Tauk.is_initialized():
+            logger.debug('Destroying Tauk context')
+            Tauk.__context.delete_execution_files()
+            del cls.instance
+
+    # TODO: Move identifier to unique method
     @classmethod
     def register_driver(cls, driver, test_file_name=None, test_method_name=None):
         logger.info(f'Registering driver instance: '
@@ -147,7 +156,8 @@ class Tauk:
                 finally:
                     test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
-                    Tauk.__context.api.upload(Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name))
+                    Tauk.__context.api.upload(
+                        Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name))
 
             return invoke_test_case
 
