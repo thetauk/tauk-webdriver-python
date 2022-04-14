@@ -20,7 +20,8 @@ class Tauk:
     instance = None
     __context: TaukContext
 
-    def __new__(cls, api_token=None, project_id=None, multi_process_run=False):
+    # TODO: Add documentation
+    def __new__(cls, api_token=None, project_id=None, multi_process_run=False, cleanup_exec_context=True):
         with mutex:
             if Tauk.instance is None:
                 logger.debug(f'Creating new Tauk instance with api_token={api_token}, project_id={project_id}, '
@@ -30,13 +31,14 @@ class Tauk:
                     logger.info('Looking for API token and project ID in environment variables')
                     api_token = os.getenv('TAUK_API_TOKEN')
                     project_id = os.getenv('TAUK_PROJECT_ID')
-                    multi_process_run = os.getenv('TAUK_MULTI_PROCESS', f'{multi_process_run}').lower().strip() == "true"
+                    multi_process_run = os.getenv('TAUK_MULTI_PROCESS',
+                                                  f'{multi_process_run}').lower().strip() == "true"
 
                 if not multi_process_run and (not api_token or not project_id):
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
                 Tauk.__context = TaukContext(api_token, project_id, multi_process_run=multi_process_run)
 
-                if multi_process_run:
+                if multi_process_run and cleanup_exec_context:
                     atexit.register(Tauk.destroy)
 
             return cls.instance

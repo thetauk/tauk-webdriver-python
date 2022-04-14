@@ -1,9 +1,12 @@
+import logging
 import re
 import subprocess
 
 import responses
 
 from tauk.tauk_webdriver import Tauk
+
+logger = logging.getLogger('tauk')
 
 if __name__ == '__main__':
     expected_run_id = '6d917db6-cf5d-4f30-8303-6eefc35e7558'
@@ -13,11 +16,23 @@ if __name__ == '__main__':
                   json={'run_id': expected_run_id, 'latest_tauk_client_version': '2.0.1'}, status=200)
 
     try:
+        logger.info('Initializing main tauk instance')
         Tauk(api_token='api-token', project_id='project-id', multi_process_run=True)
 
-        p1 = subprocess.run(['python', 'tests/listeners/multiprocess/launcher.py',
-                             '--test-name=test_one', '--class-name=UnitTestListenerTestOne']
-                            )
-        print('returncode', p1.returncode)
+        p1 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
+                               '--test-name=test_one', '--class-name=UnitTestListenerTestOne']
+                              )
+        p2 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
+                               '--test-name=test_two', '--class-name=UnitTestListenerTestTwo']
+                              )
+        p1_out, p1_err = p1.communicate()
+        print('returncode:', p1.returncode)
+        print('out:', p1_out)
+        print('err:', p1_err)
+
+        p2_out, p2_err = p2.communicate()
+        print('returncode:', p2.returncode)
+        print('out:', p2_out)
+        print('err:', p2_err)
     finally:
         responses.stop()

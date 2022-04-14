@@ -10,5 +10,6 @@ class TaukMultiprocessListener(TaukListener):
 
     def __init__(self, stream, descriptions, verbosity) -> None:
         self.multiprocess_run = True
-        Tauk(multi_process_run=True)
+        self.cleanup_exec_context_on_exit = False
+        Tauk(multi_process_run=True, cleanup_exec_context=False)
         super().__init__(stream, descriptions, verbosity)
