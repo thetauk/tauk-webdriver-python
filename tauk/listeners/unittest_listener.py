@@ -22,18 +22,18 @@ class TaukListener(unittest.TestResult):
         super().__init__(stream, descriptions, verbosity)
 
     def startTestRun(self) -> None:
-        logger.info("- Test Run Started")
+        logger.info("# Test Run Started ---")
         self.tests: Dict[str, TestCase] = {}
         Tauk(multi_process_run=self.multiprocess_run) if not Tauk.is_initialized() else None
         super().startTestRun()
 
     def stopTestRun(self) -> None:
-        logger.info("- Test Run Stopped")
+        logger.info("# Test Run Stopped ---")
         super().stopTestRun()
         sys.exc_info()
 
     def startTest(self, test: unittest.case.TestCase) -> None:
-        logger.info("- Test Started")
+        logger.info("# Test Started ---")
         self.tests[test.id()] = TestCase()
         self.tests[test.id()].start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
         self.tests[test.id()].custom_name = test.shortDescription()
@@ -49,7 +49,7 @@ class TaukListener(unittest.TestResult):
         super().startTest(test)
 
     def stopTest(self, test: unittest.case.TestCase) -> None:
-        logger.info("- Test Stopped")
+        logger.info("# Test Stopped ---")
         super().stopTest(test)
 
         self.tests[test.id()].end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
@@ -61,14 +61,14 @@ class TaukListener(unittest.TestResult):
         ctx.api.upload(ctx.get_json_test_data(caller_relative_filename, self.tests[test.id()].method_name))
 
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
-        logger.info("- Test Errored ")
+        logger.info("# Test Errored ---")
         super().addError(test, err)
         exctype, value, tb = err
         traceback.print_exception(exctype, value, tb)
         self.tests[test.id()].capture_error(self.test_filename, err)
 
     def addFailure(self, test: unittest.case.TestCase, err: tuple) -> None:
-        logger.info("- Test Failed")
+        logger.info("# Test Failed ---")
         super().addFailure(test, err)
         self.tests[test.id()].capture_failure_data()
 
@@ -77,11 +77,11 @@ class TaukListener(unittest.TestResult):
         self.tests[test.id()].capture_error(self.test_filename, err)
 
     def addSuccess(self, test: unittest.case.TestCase) -> None:
-        logger.info("- Test Passed")
+        logger.info("# Test Passed ---")
         super().addSuccess(test)
         self.tests[test.id()].capture_success_data()
 
     def addSkip(self, test: unittest.case.TestCase, reason: str) -> None:
-        logger.info("- Test Skipped")
+        logger.info("# Test Skipped ---")
         super().addSkip(test, reason)
         self.tests[test.id()].excluded = True

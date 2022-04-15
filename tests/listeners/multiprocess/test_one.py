@@ -1,10 +1,24 @@
 import unittest
 
-from tauk.exceptions import TaukException
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+from tauk.tauk_webdriver import Tauk
+from tests.utils import mock_success
 
 
 class UnitTestListenerTestOne(unittest.TestCase):
+
+    def tearDown(self) -> None:
+        # self.driver.quit()
+        pass
+
+    @mock_success()
     def test_one(self):
         print('running test one')
-        self.assertEqual(True, False, 'failed to assert')  # add assertion here
-        # raise TaukException('simple test error')
+        options = Options()
+        # options.headless = True
+
+        self.driver = webdriver.Chrome(options=options)
+        Tauk.register_driver(self.driver)
+        self.driver.get('https://www.tauk.com')
