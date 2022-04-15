@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Dict
 
 from tauk.context.test_case import TestCase
+from tauk.enums import TestStatus
 from tauk.tauk_webdriver import Tauk
 
 logger = logging.getLogger('tauk')
@@ -63,7 +64,7 @@ class TaukListener(unittest.TestResult):
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
         logger.info("# Test Errored ---")
         super().addError(test, err)
-        self.tests[test.id()].capture_failure_data()
+        self.tests[test.id()].status = TestStatus.FAILED
 
         exctype, value, tb = err
         traceback.print_exception(exctype, value, tb)
@@ -72,7 +73,7 @@ class TaukListener(unittest.TestResult):
     def addFailure(self, test: unittest.case.TestCase, err: tuple) -> None:
         logger.info("# Test Failed ---")
         super().addFailure(test, err)
-        self.tests[test.id()].capture_failure_data()
+        self.tests[test.id()].status = TestStatus.FAILED
 
         exctype, value, tb = err
         traceback.print_exception(exctype, value, tb)
@@ -81,7 +82,7 @@ class TaukListener(unittest.TestResult):
     def addSuccess(self, test: unittest.case.TestCase) -> None:
         logger.info("# Test Passed ---")
         super().addSuccess(test)
-        self.tests[test.id()].capture_success_data()
+        self.tests[test.id()].status = TestStatus.PASSED
 
     def addSkip(self, test: unittest.case.TestCase, reason: str) -> None:
         logger.info("# Test Skipped ---")

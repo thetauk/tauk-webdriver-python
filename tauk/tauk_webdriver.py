@@ -78,9 +78,9 @@ class Tauk:
 
     # TODO: Move identifier to unique method
     @classmethod
-    def register_driver(cls, driver, test_file_name=None, test_method_name=None):
+    def register_driver(cls, driver, test_filename=None, test_method_name=None):
         logger.info(f'Registering driver instance: '
-                    f'driver=[{driver}], test_file_name=[{test_file_name}], test_method_name=[{test_method_name}]')
+                    f'driver=[{driver}], test_file_name=[{test_filename}], test_method_name=[{test_method_name}]')
 
         if not Tauk.is_initialized():
             raise TaukException('Cannot register driver from a method which is not observed')
@@ -89,25 +89,25 @@ class Tauk:
         register_driver_stack_index = 0
         found_register_driver = False
 
-        if test_file_name and test_method_name:
-            test = Tauk._get_testcase(test_file_name, test_method_name)
+        if test_filename and test_method_name:
+            test = Tauk._get_testcase(test_filename, test_method_name)
             if test is None:
                 raise TaukException(f'Driver can only be registered for observed methods.'
-                                    f' Verify if {test_file_name} has @Tauk.observe decorator')
+                                    f' Verify if {test_filename} has @Tauk.observe decorator')
             test.register_driver(driver)
             return
 
         for i, frame_info in enumerate(caller_frame_records):
             # We pick the next frame after register driver
             if found_register_driver:
-                test_file_name = frame_info.filename
-                test_relative_file_name = test_file_name.replace(f'{os.getcwd()}{os.sep}', '')
+                test_filename = frame_info.filename
+                test_relative_file_name = test_filename.replace(f'{os.getcwd()}{os.sep}', '')
                 test_method_name = frame_info.function
                 test = Tauk._get_testcase(test_relative_file_name, test_method_name)
                 if test is None:
                     raise TaukException(f'1. Driver can only be registered for observed methods.'
                                         f' Verify if {test_relative_file_name} has @Tauk.observe decorator')
-                test.register_driver(driver)
+                test.register_driver(driver, test_filename, test_method_name)
                 return
 
             if frame_info.function == 'register_driver':
@@ -115,7 +115,7 @@ class Tauk:
                 register_driver_stack_index = i
 
         raise TaukException(f'2. Driver can only be registered for observed methods.'
-                            f' Verify if {test_file_name} has @Tauk.observe decorator')
+                            f' Verify if {test_filename} has @Tauk.observe decorator')
 
     @classmethod
     def observe(cls, custom_test_name=None, excluded=False):
