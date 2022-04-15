@@ -63,6 +63,8 @@ class TaukListener(unittest.TestResult):
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
         logger.info("# Test Errored ---")
         super().addError(test, err)
+        self.tests[test.id()].capture_failure_data()
+
         exctype, value, tb = err
         traceback.print_exception(exctype, value, tb)
         self.tests[test.id()].capture_error(self.test_filename, err)
