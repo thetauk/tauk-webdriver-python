@@ -177,9 +177,25 @@ class TestCase:
     def driver_instance(self, driver_instance):
         self._driver_instance = driver_instance
 
-    def register_driver(self, driver):
+    def register_driver(self, driver, test_filename=None, test_method_name=None):
         if not driver or 'webdriver' not in f'{type(driver)}':
             raise TaukException(f'Driver {type(driver)} is not of type webdriver')
+
+        if test_filename:
+            driver.tauk_test_filename = test_filename
+        if test_method_name:
+            driver.tauk_test_method_name = test_method_name
+
+        def tauk_callback(func):
+            def inner():
+                self.capture_screenshot()
+                self.capture_view_hierarchy()
+                func()
+
+            return inner
+
+        driver.quit = tauk_callback(driver.quit)
+
         self.driver_instance = driver
         self.capabilities = driver.capabilities
 
@@ -209,6 +225,9 @@ class TestCase:
         self.browser_driver_version = get_browser_driver_version(driver)
 
     def capture_screenshot(self):
+        if self.screenshot and len(self.screenshot) > 0:
+            logger.debug('Screenshot is already captured')
+            return
         if self.driver_instance:
             try:
                 self.screenshot = self.driver_instance.get_screenshot_as_base64()
@@ -216,6 +235,9 @@ class TestCase:
                 logger.error("An issue occurred while trying to take a screenshot.", exc_info=ex)
 
     def capture_view_hierarchy(self):
+        if self.view and len(self.view) > 0:
+            logger.debug('View Hierarchy is already captured')
+            return
         if self.driver_instance:
             try:
                 # TODO: Revisit flutter because if we switch context then we have to also switch back to original
