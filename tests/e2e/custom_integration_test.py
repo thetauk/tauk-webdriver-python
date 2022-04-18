@@ -12,6 +12,7 @@ class CustomIntegrationTest:
     @Tauk.observe(custom_test_name="Test Selenium")
     def test_selenium(self):
         self.driver = selenium_driver.Chrome()
+        # self.driver = selenium_driver.Edge()
         Tauk.register_driver(self.driver)
         # CustomIntegrationSupport().another_register_driver(self.driver)
         print('Custom integration test')
@@ -26,6 +27,7 @@ class CustomIntegrationTest:
             "deviceName": "Pixel 5",
             "udid": "emulator-5554",
             "platformName": "Android",
+            # "browserName": "chrome",
             "appPackage": "io.aj.sample",
             "appActivity": ".MainActivity",
             "automationName": "UiAutomator2",

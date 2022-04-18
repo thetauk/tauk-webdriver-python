@@ -85,7 +85,7 @@ class TestDataTest(unittest.TestCase):
         t = unittest.TestCase()
         t.assertEqual(tc['method_name'], 'test_2_failure_test_case_data', 'Invalid method name')
         t.assertEqual(tc['status'], TestStatus.FAILED.value, 'Invalid test status')
-        t.assertEqual(tc['automation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
+        t.assertEqual(tc['aucatomation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
         t.assertEqual(tc['platform_name'], PlatformNames.MACOS.value, 'Invalid platform name')
         t.assertEqual(tc['browser_name'], BrowserNames.CHROME.value, 'Invalid browser name')
         t.assertTrue(len(tc['browser_version']) > 0, f'Invalid browser version {tc["browser_version"]}')

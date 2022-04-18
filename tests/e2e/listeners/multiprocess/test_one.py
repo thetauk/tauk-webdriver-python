@@ -11,7 +11,7 @@ from tests.utils import mock_success
 class UnitTestListenerTestOne(unittest.TestCase):
 
     def tearDown(self) -> None:
-        # self.driver.quit()
+        self.driver.quit()
         pass
 
     @mock_success()
@@ -23,4 +23,4 @@ class UnitTestListenerTestOne(unittest.TestCase):
         self.driver = webdriver.Chrome(options=options)
         Tauk.register_driver(self.driver)
         self.driver.get('https://www.tauk.com')
-        self.driver.find_element(By.ID, 'nonexisting')
+        # self.driver.find_element(By.ID, 'nonexisting')
