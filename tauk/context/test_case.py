@@ -9,7 +9,7 @@ import traceback
 import typing
 
 from tauk.context.test_error import TestError
-from tauk.enums import AutomationTypes, PlatformNames, TestStatus
+from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames
 from tauk.exceptions import TaukException
 from tauk.utils import get_filtered_object, get_appium_server_version, get_browser_driver_version
 
@@ -26,7 +26,7 @@ class TestCase:
         self.excluded: bool = False
         self._automation_type: AutomationTypes = None
         self._platform_name: PlatformNames = None
-        self.platform_version: str = None  # TODO: check
+        self.platform_version: str = None
         self.browser_name: str = None
         self.browser_version: str = None
         self._start_timestamp: int = None
@@ -45,7 +45,6 @@ class TestCase:
         self.log: typing.List[object] = None
 
         self._driver_instance = None
-        self.is_synced: bool = None  # TODO: Figure out exact format and usecase
 
     def __getstate__(self):
         state = get_filtered_object(self, include_private=True,
@@ -157,7 +156,7 @@ class TestCase:
         return self._tags
 
     def add_tag(self, tag_name, value):
-        # TODO: check if tag name already exists
+        logger.debug(f'Adding tag {tag_name}={value}')
         self._tags[tag_name] = value
 
     @property
@@ -165,8 +164,8 @@ class TestCase:
         return self._user_data
 
     def add_user_data(self, name, value):
-        # TODO: check if name already exists
-        # Add validations like size check etc
+        if len(name) > 100 and len(value) > 1000:
+            raise TaukException('user data is too large')
         self._user_data[name] = value
 
     @property
@@ -212,14 +211,13 @@ class TestCase:
                 self.webdriver_client_version = library_version()
                 self.appium_server_version = get_appium_server_version(driver)
 
-        # TODO: handle cases where platform name not available
         if self.automation_type is AutomationTypes.APPIUM:
             self.platform_name = PlatformNames.resolve(self.capabilities.get('platform', ''))
         else:
             self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
 
         self.platform_version = self.capabilities.get('platformVersion', '')
-        self.browser_name = self.capabilities.get('browserName', '')
+        self.browser_name = BrowserNames.resolve(self.capabilities.get('browserName', ''))
         self.browser_version = self.capabilities.get('browserVersion', '')
 
         self.browser_driver_version = get_browser_driver_version(driver)

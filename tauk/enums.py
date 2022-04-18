@@ -23,6 +23,19 @@ class BrowserNames(Enum):
     def __getstate__(self):
         return self.value
 
+    @classmethod
+    def resolve(cls, name: str):
+        if 'chrome' in name.lower():
+            return BrowserNames.CHROME
+        elif 'firefox' in name.lower():
+            return BrowserNames.FIREFOX
+        elif 'edge' in name.lower():
+            return BrowserNames.EDGE
+        elif 'safari' in name.lower():
+            return BrowserNames.SAFARI
+        else:
+            raise TaukException(f'unable to resolve browser name {name}')
+
 
 @unique
 class AutomationTypes(Enum):
