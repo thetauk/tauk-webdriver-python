@@ -35,14 +35,16 @@ class TaukContext:
         return self.api.initialize_run(self.test_data, run_id)
 
     def delete_execution_files(self):
+        if not os.path.exists(self.exec_dir):
+            return
+
         logger.debug(f'Deleting execution files in {self.exec_dir}')
         lock_file = f'{self.exec_file}.lock'
         if os.path.exists(self.exec_file):
             os.remove(self.exec_file)
         if os.path.exists(lock_file):
             os.remove(lock_file)
-        if os.path.exists(self.exec_dir):
-            os.rmdir(self.exec_dir)
+        os.rmdir(self.exec_dir)
 
     def _setup_execution_file(self):
         logger.debug(f'Setting up execution file {self.exec_file}')
