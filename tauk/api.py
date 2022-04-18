@@ -1,5 +1,6 @@
 import logging
 import os
+import platform
 from datetime import datetime, timezone
 
 import requests
@@ -43,7 +44,9 @@ class TaukApi:
             'start_timestamp': int(datetime.now(tz=timezone.utc).timestamp() * 1000),
             'timezone': test_data.timezone,
             'dst': test_data.dst,
-            'multi_process_run': self._multi_process_run
+            'multi_process_run': self._multi_process_run,
+            'host_os_name': platform.system(),
+            'host_os_version': platform.version()
         }
 
         if run_id:
