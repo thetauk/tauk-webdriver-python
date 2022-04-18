@@ -55,7 +55,6 @@ class Tauk:
         logger.info(f'Returning Tauk instance {cls.instance}')
         return cls.instance
 
-    # TODO: Check if this is needed?
     @classmethod
     def get_context(cls):
         return Tauk.__context
@@ -84,7 +83,7 @@ class Tauk:
                     f'driver=[{driver}], test_file_name=[{test_filename}], test_method_name=[{test_method_name}]')
 
         if not Tauk.is_initialized():
-            raise TaukException('Cannot register driver from a method which is not observed')
+            raise TaukException('driver can only be registered from test methods')
 
         caller_frame_records = inspect.stack()
         register_driver_stack_index = 0
@@ -93,7 +92,7 @@ class Tauk:
         if test_filename and test_method_name:
             test = Tauk._get_testcase(test_filename, test_method_name)
             if test is None:
-                raise TaukException(f'Driver can only be registered for observed methods.'
+                raise TaukException(f'driver can only be registered for observed methods.'
                                     f' Verify if {test_filename} has @Tauk.observe decorator')
             test.register_driver(driver)
             return

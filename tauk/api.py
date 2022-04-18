@@ -86,7 +86,10 @@ class TaukApi:
 
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
-        # TODO: Validate response code
+        if response.status_code != 200:
+            logger.error(f'Failed to upload test. Response: {response.text}')
+            raise TaukException('failed to upload test results')
+
         return response.json()['test_id']
 
     def test_finish(self, test_name, file_name, start_time, end_time):
@@ -104,7 +107,10 @@ class TaukApi:
 
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
-        # TODO: Validate response code
+        if response.status_code != 200:
+            logger.error(f'Failed to upload test. Response: {response.text}')
+            raise TaukException('failed to upload test results')
+
         return response.json()['test_id']
 
     def upload(self, test_data):

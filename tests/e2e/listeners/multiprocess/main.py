@@ -22,17 +22,17 @@ if __name__ == '__main__':
         p1 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
                                '--test-name=test_one', '--class-name=UnitTestListenerTestOne']
                               )
-        # p2 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
-        #                        '--test-name=test_two', '--class-name=UnitTestListenerTestTwo']
-        #                       )
+        p2 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
+                               '--test-name=test_two', '--class-name=UnitTestListenerTestTwo']
+                              )
         p1_out, p1_err = p1.communicate()
         print('returncode:', p1.returncode)
         print('out:', p1_out)
         print('err:', p1_err)
 
-        # p2_out, p2_err = p2.communicate()
-        # print('returncode:', p2.returncode)
-        # print('out:', p2_out)
-        # print('err:', p2_err)
+        p2_out, p2_err = p2.communicate()
+        print('returncode:', p2.returncode)
+        print('out:', p2_out)
+        print('err:', p2_err)
     finally:
         responses.stop()

@@ -236,9 +236,9 @@ class TestCase:
         if self.view and len(self.view) > 0:
             logger.debug('View Hierarchy is already captured')
             return
-        if self.driver_instance and hasattr(self.driver_instance, 'contexts'):
+        if self.driver_instance:
             try:
-                if 'FLUTTER' in self.driver_instance.contexts:
+                if hasattr(self.driver_instance, 'contexts') and 'FLUTTER' in self.driver_instance.contexts:
                     current_context = self.driver_instance.current_context
                     self.driver_instance.switch_to.context('NATIVE_APP')
                     self.view = self.driver_instance.page_source
