@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import typing
+from functools import wraps
 
 import responses
 
@@ -53,6 +54,7 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
                 test_method_name = frame_info.frame.f_code.co_names[-1]
                 break
 
+        @wraps(func)
         def inner(*args, **kwargs):
             try:
                 result = func(*args, **kwargs)
@@ -76,6 +78,8 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
                         test_case = test_suite.get_test_case(test_method_name)
                         if test_case:
                             validation(caller_filename, test_method_name, ctx, test_data, test_suite, test_case)
+
+                raise
             finally:
                 # disable_mocking()
                 pass

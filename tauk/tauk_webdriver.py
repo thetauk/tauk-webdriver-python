@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timezone
+from functools import wraps
 from threading import Lock
 
 from tauk.context.context import TaukContext
@@ -105,8 +106,8 @@ class Tauk:
                 test_method_name = frame_info.function
                 test = Tauk._get_testcase(test_relative_file_name, test_method_name)
                 if test is None:
-                    raise TaukException(f'1. Driver can only be registered for observed methods.'
-                                        f' Verify if {test_relative_file_name} has @Tauk.observe decorator')
+                    raise TaukException(
+                        f'driver can only be registered with an active tauk listener or an observed method')
                 test.register_driver(driver, test_filename, test_method_name)
                 return
 
@@ -114,8 +115,7 @@ class Tauk:
                 found_register_driver = True
                 register_driver_stack_index = i
 
-        raise TaukException(f'2. Driver can only be registered for observed methods.'
-                            f' Verify if {test_filename} has @Tauk.observe decorator')
+        raise TaukException(f'driver(2) can only be registered with an active tauk listener or an observed method')
 
     @classmethod
     def observe(cls, custom_test_name=None, excluded=False):
@@ -139,6 +139,7 @@ class Tauk:
                     Tauk.__context.test_data.add_test_case(caller_relative_filename, test_case)
                     break
 
+            @wraps(func)
             def invoke_test_case(*args, **kwargs):
                 try:
                     test_case.start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)

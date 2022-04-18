@@ -236,11 +236,14 @@ class TestCase:
         if self.view and len(self.view) > 0:
             logger.debug('View Hierarchy is already captured')
             return
-        if self.driver_instance:
+        if self.driver_instance and hasattr(self.driver_instance, 'contexts'):
             try:
-                # TODO: Revisit flutter because if we switch context then we have to also switch back to original
-                # if 'FLUTTER' in self.driver_instance.contexts:
-                #     self.driver_instance.switch_to.context('NATIVE_APP')
+                if 'FLUTTER' in self.driver_instance.contexts:
+                    current_context = self.driver_instance.current_context
+                    self.driver_instance.switch_to.context('NATIVE_APP')
+                    self.view = self.driver_instance.page_source
+                    self.driver_instance.switch_to.context(current_context)
+                    return
 
                 self.view = self.driver_instance.page_source
             except Exception as ex:
