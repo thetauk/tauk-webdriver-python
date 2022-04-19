@@ -11,25 +11,21 @@ $ pip install tauk
 ### Import the Tauk package in your test suite. 
 
 ```python
-from tauk import Tauk
+from tauk.tauk_webdriver import Tauk
 ```
 
 ### Initialize Tauk with your driver, `API TOKEN`, and `PROJECT ID`.
+You only have to initialize Tauk() once for the entire execution. 
 You can retrieve your `API TOKEN` and `PROJECT ID` from the Tauk Web UI. Your tokens can be generated and retrieved from the *User Settings > API Access* section. Each of your project cards will have their associated project id's in the *#* section.
 ```python
-Tauk.initialize(api_token="API-TOKEN", project_id="PROJECT-ID", driver=self.driver)
+Tauk(api_token="API-TOKEN", project_id="PROJECT-ID", driver=self.driver)
 ```
 
-
-If you want to exclude a test case from analysis you can pass in the argument `excluded=True`. For example:
-```python
-Tauk.initialize(api_token="API-TOKEN", project_id="PROJECT-ID", driver=self.driver, excluded=True)
-```
 
 ### Decorate your individual test case methods with `@Tauk.observe`.
 Add the `@Tauk.observe` decorator above the test case methods you want Tauk to watch.  For example:
 ```python
-@Tauk.observe
+@Tauk.observe(custom_test_name='Add New Contact', excluded=False)
 def test_Contacts_AddNewContact(self):
 	print("Clicking on the [Add] Button")
 	self.wait.until(expected_conditions.presence_of_element_located(
@@ -37,16 +33,24 @@ def test_Contacts_AddNewContact(self):
 	).click()
 ```
 
-
-### Call `Tauk.upload()` before ending your driver session.
-
+If you want to exclude a test case from analysis you can pass in the argument `excluded=True`. For example:
 ```python
-Tauk.upload()
+@Tauk.observe(custom_test_name='Add New Contact', excluded=True)
 ```
 
-### Recommendations for use in test frameworks
-When using the Tauk package in test frameworks, such as `unittest` and `pytest`, here are some recommendations:
-- Call `Tauk.initialize(...)` within your setup method or fixture.
-- Call `Tauk.upload()` in your teardown method or fixture.
+If you are using [unittest](https://docs.python.org/3/library/unittest.html) for test automation, Tauk comes packages with a test listener which can hook onto the test lifecycle and extract test information.
+When using a test listener you no longer have to decorate the test method with `Tauk.observe`
+
+You can use Tauk listener as follows
+```python
+from tauk.listeners.unittest_listener import TaukListener
+
+if __name__ == '__main__':
+    ...
+    suite = unittest.TestSuite()
+    suite.addTest(AndroidContactsTest('test_Contacts_AddNewContact'))
+    unittest.TextTestRunner(resultclass=TaukListener).run(suite)
+    ...
+```
 
 *For sample code, please take a look at the `android_contacts_tests.py` test case in the `tests` directory of the repository.*
