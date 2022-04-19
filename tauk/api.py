@@ -46,7 +46,7 @@ class TaukApi:
             'dst': test_data.dst,
             'multi_process_run': self._multi_process_run,
             'host_os_name': platform.system(),
-            'host_os_version': platform.version()
+            'host_os_version': platform.platform(terse=True)
         }
 
         if run_id:
