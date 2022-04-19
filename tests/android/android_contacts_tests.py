@@ -1,14 +1,14 @@
 import time
 from appium.webdriver.common.mobileby import MobileBy
 from selenium.webdriver.support import expected_conditions
+
 from tests.android.test_base import TestBase
 from tests.android.project_capabilities import ProjectCapabilities
-# Import Tauk
-from tauk import Tauk
+from tauk.tauk_webdriver import Tauk
 
 
 class ContactsAndroidTests(TestBase):
-    app_package = "com.android.contacts"
+    app_package = "com.google.android.contacts"
 
     def pre_launch(self):
         self.caps = ProjectCapabilities.android_base_capabilities()
@@ -38,7 +38,7 @@ class ContactsAndroidTests(TestBase):
     def test_Contacts_AddNewContact(self):
         print("Clicking on the [Add] Button")
         self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ID, "com.android.contacts:id/floating_action_button"))
+            (MobileBy.ID, "com.android.contacts:id/floating_action_button_AAAAA"))
         ).click()
 
         first_name: str = "Tauk"
@@ -76,41 +76,41 @@ class ContactsAndroidTests(TestBase):
             (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"DELETE\")"))
         ).click()
 
-    def test_Contacts_Failure(self):
-        print("Clicking on the [Add] Button")
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ID, "com.android.contacts:id/floating_action_button"))
-        ).click()
-
-        first_name: str = "Tauk"
-        print("Sending Keys to the First name field [{}]".format(first_name))
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"First name\")"))
-        ).send_keys(first_name)
-
-        last_name: str = "Samples"
-        print("Sending Keys to the Last name field [{}]".format(last_name))
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"LastXX name\")"))
-        ).send_keys(last_name)
-
-    def test_Contacts_UsesVariousSelectors(self):
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.XPATH, '//android.widget.ImageButton[@content-desc="Open navigation drawer"]'))
-        ).click()
-
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ID, "com.android.contacts:id/nav_settings"))
-        ).click()
-
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"Sort by\")"))
-        ).click()
-
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.CLASS_NAME, "android.widget.CheckedTextView"))
-        ).click()
-
-        self.wait.until(expected_conditions.presence_of_element_located(
-            (MobileBy.ACCESSIBILITY_ID, "Navigate up"))
-        ).click()
+    # def test_Contacts_Failure(self):
+    #     print("Clicking on the [Add] Button")
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.ID, "com.android.contacts:id/floating_action_button"))
+    #     ).click()
+    #
+    #     first_name: str = "Tauk"
+    #     print("Sending Keys to the First name field [{}]".format(first_name))
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"First name\")"))
+    #     ).send_keys(first_name)
+    #
+    #     last_name: str = "Samples"
+    #     print("Sending Keys to the Last name field [{}]".format(last_name))
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"LastXX name\")"))
+    #     ).send_keys(last_name)
+    #
+    # def test_Contacts_UsesVariousSelectors(self):
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.XPATH, '//android.widget.ImageButton[@content-desc="Open navigation drawer"]'))
+    #     ).click()
+    #
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.ID, "com.android.contacts:id/nav_settings"))
+    #     ).click()
+    #
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.ANDROID_UIAUTOMATOR, "new UiSelector().text(\"Sort by\")"))
+    #     ).click()
+    #
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.CLASS_NAME, "android.widget.CheckedTextView"))
+    #     ).click()
+    #
+    #     self.wait.until(expected_conditions.presence_of_element_located(
+    #         (MobileBy.ACCESSIBILITY_ID, "Navigate up"))
+    #     ).click()

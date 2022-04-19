@@ -5,8 +5,7 @@ from selenium.webdriver.support import expected_conditions
 
 from tests.chrome.project_capabilities import ProjectCapabilities
 from tests.chrome.test_base import TestBase
-# Import Tauk
-from tauk import Tauk
+from tauk.tauk_webdriver import Tauk
 
 
 class ChromeTests(TestBase):
