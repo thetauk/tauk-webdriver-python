@@ -50,7 +50,6 @@ class TestCase:
         state = get_filtered_object(self, include_private=True,
                                     filter_keys=[
                                         '_driver_instance',
-                                        'is_synced',
                                         'excluded'
                                     ])
         if self.excluded is True:
@@ -216,7 +215,7 @@ class TestCase:
         else:
             self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
 
-        self.platform_version = self.capabilities.get('platformVersion', '')
+        self.platform_version = self.capabilities.get('platformVersion', None)
         self.browser_name = BrowserNames.resolve(self.capabilities.get('browserName', ''))
         self.browser_version = self.capabilities.get('browserVersion', '')
 

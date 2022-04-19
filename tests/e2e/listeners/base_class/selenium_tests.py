@@ -5,6 +5,7 @@ import unittest
 import jsonpickle
 import selenium
 import tzlocal
+from selenium.webdriver.common.by import By
 
 from tauk.context.context import TaukContext
 from tauk.context.test_case import TestCase
@@ -102,11 +103,11 @@ class TestDataTest(BaseTestCase):
         t.assertNotIn('user_data', tc.keys(), 'user_data is not None')
         t.assertNotIn('log', tc.keys(), 'log is not None')
 
-    # @mock_success(validation=validate_failure)
-    # def test_2_failure_test_case_data(self):
-    #     Tauk.register_driver(self.driver)
-    #     self.driver.get('https://www.tauk.com')
-    #     self.driver.find_element(By.ID, 'unknown-id')
+    @mock_success(validation=validate_failure)
+    def test_2_failure_test_case_data(self):
+        Tauk.register_driver(self.driver)
+        self.driver.get('https://www.tauk.com')
+        self.driver.find_element(By.ID, 'unknown-id')
 
 
 if __name__ == '__main__':
