@@ -18,7 +18,12 @@ from tauk.tauk_webdriver import Tauk
 You only have to initialize Tauk() once for the entire execution. 
 You can retrieve your `API TOKEN` and `PROJECT ID` from the Tauk Web UI. Your tokens can be generated and retrieved from the *User Settings > API Access* section. Each of your project cards will have their associated project id's in the *#* section.
 ```python
-Tauk(api_token="API-TOKEN", project_id="PROJECT-ID", driver=self.driver)
+Tauk(api_token="API-TOKEN", project_id="PROJECT-ID")
+```
+
+Additionally, if you are running tests in parallel and each test runs in a different process you should include the `multi_process_run=True` flag when initializing tauk so that it can tie multiple processes with the same execution.
+```python
+Tauk(api_token="API-TOKEN", project_id="PROJECT-ID", multi_process_run=True)
 ```
 
 
@@ -38,7 +43,9 @@ If you want to exclude a test case from analysis you can pass in the argument `e
 @Tauk.observe(custom_test_name='Add New Contact', excluded=True)
 ```
 
-If you are using [unittest](https://docs.python.org/3/library/unittest.html) for test automation, Tauk comes packages with a test listener which can hook onto the test lifecycle and extract test information.
+*For sample code, please take a look at the `android_contacts_tests.py` test case in the `tests` directory of the repository.*
+
+If you are using [unittest](https://docs.python.org/3/library/unittest.html) for test automation, Tauk comes packaged with a test listener which can hook onto the test lifecycle and extract test information.
 When using a test listener you no longer have to decorate the test method with `Tauk.observe`
 
 You can use Tauk listener as follows
@@ -53,4 +60,3 @@ if __name__ == '__main__':
     ...
 ```
 
-*For sample code, please take a look at the `android_contacts_tests.py` test case in the `tests` directory of the repository.*
