@@ -217,7 +217,7 @@ class TestCase:
 
         self.platform_version = self.capabilities.get('platformVersion', None)
         self.browser_name = BrowserNames.resolve(self.capabilities.get('browserName', ''))
-        self.browser_version = self.capabilities.get('browserVersion', '')
+        self.browser_version = self.capabilities.get('browserVersion', None)
 
         self.browser_driver_version = get_browser_driver_version(driver)
 

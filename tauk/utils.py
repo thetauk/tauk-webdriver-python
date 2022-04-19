@@ -46,7 +46,7 @@ def get_browser_driver_version(driver):
     elif browser_name == 'msedge':
         return driver.capabilities['msedge']['msedgedriverVersion']
     else:
-        return ''
+        return None
 
 
 def shortened_json(json_text):
