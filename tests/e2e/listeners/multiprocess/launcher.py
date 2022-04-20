@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--class-name', type=str)
     args = parser.parse_args()
 
-    module = importlib.import_module(f'tests.listeners.multiprocess.{args.test_name}')
+    module = importlib.import_module(f'tests.e2e.listeners.multiprocess.{args.test_name}')
     test_class = getattr(module, args.class_name)
     suite = unittest.TestSuite()
     for test_method in TestLoader().getTestCaseNames(test_class):

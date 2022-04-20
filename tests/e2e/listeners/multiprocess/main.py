@@ -19,10 +19,10 @@ if __name__ == '__main__':
         logger.info('Initializing main tauk instance')
         Tauk(api_token='api-token', project_id='project-id', multi_process_run=True)
 
-        p1 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
+        p1 = subprocess.Popen(['python', 'tests/e2e/listeners/multiprocess/launcher.py',
                                '--test-name=test_one', '--class-name=UnitTestListenerTestOne']
                               )
-        p2 = subprocess.Popen(['python', 'tests/listeners/multiprocess/launcher.py',
+        p2 = subprocess.Popen(['python', 'tests/e2e/listeners/multiprocess/launcher.py',
                                '--test-name=test_two', '--class-name=UnitTestListenerTestTwo']
                               )
         p1_out, p1_err = p1.communicate()
