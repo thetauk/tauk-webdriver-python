@@ -14,7 +14,7 @@ __classifiers__ = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-__requires__ = ["requests", "Appium-Python-Client", "selenium"]
+__requires__ = ["requests", "Appium-Python-Client", "selenium", "filelock", "jsonpickle", "tzlocal"]
 
 __extra_requires__ = {
 }
