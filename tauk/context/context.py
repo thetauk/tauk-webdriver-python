@@ -17,7 +17,7 @@ class TaukContext:
 
     def __init__(self, api_token, project_id, multi_process_run=False):
         self.test_data: TestData = TestData()
-        self.exec_dir = os.path.join(os.environ.get('TAUK_HOME'), hashlib.md5(os.getcwd().encode()).hexdigest())
+        self.exec_dir = self._get_exec_dir()
         self.exec_file = os.path.join(self.exec_dir, 'exec.run')
         self.api = TaukApi(api_token, project_id, multi_process_run)
 
@@ -25,10 +25,28 @@ class TaukContext:
             self._setup_execution_file()
             return
         else:
+            logger.debug('Deleting execution context because its not a multiprocess run')
             self.delete_execution_files()
 
         self.run_id = self._init_run()
         logger.info(f'[{api_token}] Setting RUN ID: {self.run_id}')
+
+    def _get_exec_dir(self):
+        if 'TAUK_EXEC_DIR' in os.environ and len(os.environ.get('TAUK_EXEC_DIR')) > 0:
+            logger.debug(f'Using execution dir found in environment variable {os.environ.get("TAUK_EXEC_DIR")}')
+            return os.environ.get('TAUK_EXEC_DIR')
+
+        exec_home = os.path.join(os.environ.get('TAUK_HOME'), hashlib.md5(os.getcwd().encode()).hexdigest())
+        parent_exec_dir = os.path.join(exec_home, f'{os.getppid()}')
+        if os.path.exists(parent_exec_dir):
+            logger.debug(f'Found exits execution dir at {parent_exec_dir}')
+            return parent_exec_dir
+
+        new_exec_dir = os.path.join(exec_home, f'{os.getpid()}')
+        logger.debug(f'Using new execution dir at {new_exec_dir}')
+        # Set environment variable so that child process can use this
+        os.environ['TAUK_EXEC_DIR'] = new_exec_dir
+        return new_exec_dir
 
     def _init_run(self, run_id=None):
         # return self.api.initialize_run_mock(self.test_data, run_id)
@@ -47,8 +65,6 @@ class TaukContext:
         os.rmdir(self.exec_dir)
 
     def _setup_execution_file(self):
-        logger.debug(f'Setting up execution file {self.exec_file}')
-
         def set_exec_file(r_id, a_token, p_id):
             with open(self.exec_file, "w") as f:
                 logger.debug(f'Updating execution file with {r_id}')
@@ -66,6 +82,7 @@ class TaukContext:
             os.makedirs(self.exec_dir)
 
         with FileLock(f'{self.exec_file}.lock', timeout=30):
+            logger.debug(f'Execution locked for {self.exec_file}')
             if os.path.exists(self.exec_file):
                 with open(self.exec_file, 'r') as file:
                     run_id, api_token, project_id = file.read().strip().split(',')
@@ -80,6 +97,7 @@ class TaukContext:
                         logger.warning(f'Invalid runID [{run_id}]')
 
             set_exec_file(self._init_run(), self.api.get_api_token(), self.api.get_project_id())
+            logger.debug(f'Execution unlocked for {self.exec_file}')
 
     def print(self):
         print('-------- Test Data ---------------')
