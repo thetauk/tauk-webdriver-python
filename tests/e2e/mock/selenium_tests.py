@@ -39,7 +39,7 @@ class TestDataTest(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
-    @mock_success()
+    @mock_success(init_tauk=True)
     @Tauk.observe(custom_test_name='custom name')
     def test_1_success_test_case_data(self):
         Tauk.register_driver(TestDataTest.driver)
@@ -117,9 +117,10 @@ class TestDataTest(unittest.TestCase):
         t.assertNotIn('user_data', tc.keys(), 'user_data is not None')
         t.assertNotIn('log', tc.keys(), 'log is not None')
 
-    @mock_success(validation=validate_failure)
+    @mock_success(validation=validate_failure, init_tauk=True)
     @Tauk.observe()
     def test_2_failure_test_case_data(self):
+        print(Tauk.get_context().test_data)
         Tauk.register_driver(self.driver)
         self.driver.get('https://www.tauk.com')
         self.driver.find_element(By.ID, 'unknown-id')
