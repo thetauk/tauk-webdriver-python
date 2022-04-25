@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from selenium import webdriver
@@ -14,7 +15,7 @@ class UnitTestListenerTestOne(unittest.TestCase):
         self.driver.quit()
         pass
 
-    @mock_success()
+    @mock_success(multiprocess=True)
     def test_one(self):
         print('running test one')
         options = Options()
