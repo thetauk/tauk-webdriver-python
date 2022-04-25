@@ -25,7 +25,7 @@ class TestDataTest(unittest.TestCase):
     driver = None
 
     @classmethod
-    def setUp(cls) -> None:
+    def setUpClass(cls) -> None:
         cls.options = Options()
         cls.options.headless = True
         cls.driver = webdriver.Chrome(options=cls.options)
@@ -126,5 +126,6 @@ class TestDataTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    Tauk(api_token="api-token", project_id="project-id")
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestDataTest)
     unittest.TextTestRunner(resultclass=TaukListener).run(suite)
