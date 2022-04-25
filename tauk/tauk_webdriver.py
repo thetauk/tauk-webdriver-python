@@ -30,8 +30,8 @@ class Tauk:
                 cls.instance = super(Tauk, cls).__new__(cls)
                 if not api_token or not project_id:
                     logger.info('Looking for API token and project ID in environment variables')
-                    api_token = os.getenv('TAUK_API_TOKEN', None)
-                    project_id = os.getenv('TAUK_PROJECT_ID', None)
+                    api_token = os.getenv('TAUK_API_TOKEN')
+                    project_id = os.getenv('TAUK_PROJECT_ID')
                     multi_process_run = os.getenv('TAUK_MULTI_PROCESS',
                                                   f'{multi_process_run}').lower().strip() == "true"
 
