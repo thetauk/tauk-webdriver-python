@@ -33,17 +33,22 @@ class TaukListener(unittest.TestResult):
 
     def startTest(self, test: unittest.case.TestCase) -> None:
         logger.info(f'# Test Started [{test.id()}] ---')
-        self.tests[test.id()] = TestCase()
-        self.tests[test.id()].start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-        self.tests[test.id()].custom_name = test.shortDescription()
 
         caller_filename = inspect.getfile(test.__class__)
         self.test_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
+        test_method_name = test.id().split('.')[-1]
+        test_case = Tauk.get_testcase(self.test_filename, test_method_name)
 
-        test_case_name = test.id().split('.')[-1]
-        self.tests[test.id()].method_name = test_case_name
+        if test_case is None:
+            logger.debug('Creating new test case')
+            self.tests[test.id()] = TestCase()
+            self.tests[test.id()].method_name = test_method_name
+            Tauk.get_context().test_data.add_test_case(self.test_filename, self.tests[test.id()])
+        else:
+            self.tests[test.id()] = test_case
 
-        Tauk.get_context().test_data.add_test_case(self.test_filename, self.tests[test.id()])
+        self.tests[test.id()].start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+        self.tests[test.id()].custom_name = test.shortDescription()
 
         super().startTest(test)
 
