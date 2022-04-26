@@ -44,6 +44,11 @@ TAUK_PROJECT_ID=YOUR-PROJECT-ID
 
 # If you have a multiprocess run
 TAUK_MULTI_PROCESS=true
+
+# Useful if you running multiple instances of you project. 
+# Tauk will automatically use the process ID to create the execution context, 
+# but you can override this behavior and provide an explicit execution dir if needed
+TAUK_EXEC_DIR=/tmp/tauk/smoke_runs
 ```
 
 If you're passing these inputs through environment variables, you conveniently don't need to explicitly initialize the Tauk class in your code. Instead, the Tauk class will check your environment variables on invocation. In other words, if you have the inputs as environment variables you can just import Tauk.

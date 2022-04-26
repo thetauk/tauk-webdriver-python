@@ -37,6 +37,7 @@ class Tauk:
 
                 if not multi_process_run and (not api_token or not project_id):
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
+
                 Tauk.__context = TaukContext(api_token, project_id, multi_process_run=multi_process_run)
 
                 if multi_process_run and cleanup_exec_context:
@@ -73,7 +74,11 @@ class Tauk:
     def destroy(cls):
         if Tauk.is_initialized():
             logger.debug('Destroying Tauk context')
-            Tauk.__context.delete_execution_files()
+            try:
+                Tauk.__context.delete_execution_files()
+            except Exception as ex:
+                logger.error('Failed to delete execution file', exc_info=ex)
+
             del cls.instance
 
     # TODO: Move identifier to unique method

@@ -30,20 +30,21 @@ def register_mock_urls(urls: typing.List[str], json_responses: typing.List[objec
         responses.add(responses.POST, url, json=json_responses[i], status=statuses[i])
 
 
-def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[int], validation=None):
+def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[int], validation=None,
+         multiprocess=False, init_tauk=False):
     if not isinstance(urls, list) or not isinstance(json_responses, list) or not isinstance(statuses, list):
         raise TaukException('arguments to mock method must be of list type of same size')
 
     if not (len(urls) == len(json_responses) == len(statuses)):
         raise TaukException('arguments to mock method must be of list type of same size')
 
-    if not Tauk.is_initialized():
-        enable_mocking()
-        register_mock_urls(urls, json_responses, statuses)
+    enable_mocking()
+    register_mock_urls(urls, json_responses, statuses)
 
+    if init_tauk and not Tauk.is_initialized():
         api_token = os.getenv('TAUK_API_TOKEN', 'api-token')
         project_id = os.getenv('TAUK_PROJECT_ID', 'project-id')
-        Tauk(api_token=api_token, project_id=project_id)
+        Tauk(api_token=api_token, project_id=project_id, multi_process_run=multiprocess)
 
     def inner_decorator(func):
         caller_filename = None
@@ -89,12 +90,15 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
     return inner_decorator
 
 
-def mock_success(expected_run_id='6d917db6-cf5d-4f30-8303-6eefc35e7558', validation=None):
+def mock_success(expected_run_id='6d917db6-cf5d-4f30-8303-6eefc35e7558', validation=None,
+                 multiprocess=False, init_tauk=False):
     return mock(
         urls=[re.compile(r'https://www.tauk.com/api/v1/execution/.+/initialize'),
               re.compile(r'https://www.tauk.com/api/v1/execution/.+/.+/report/upload')],
         json_responses=[{'run_id': expected_run_id, 'message': 'success'},
                         {'message': 'success'}],
         statuses=[200, 200],
-        validation=validation
+        validation=validation,
+        multiprocess=multiprocess,
+        init_tauk=init_tauk
     )
