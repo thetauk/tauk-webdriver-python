@@ -82,7 +82,7 @@ class Tauk:
 
             del cls.instance
 
-    # TODO: Move identifier to unique method
+    # TODO: Move identifier to common method
     @classmethod
     def register_driver(cls, driver, unittestcase=None):
         logger.info(f'Registering driver instance: driver=[{driver}], unittestcase=[{unittestcase}]')

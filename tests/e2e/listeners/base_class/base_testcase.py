@@ -2,7 +2,6 @@ import unittest
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-
 from tauk.tauk_webdriver import Tauk
 
 
