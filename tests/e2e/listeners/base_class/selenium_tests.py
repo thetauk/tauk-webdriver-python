@@ -1,4 +1,3 @@
-import re
 import typing
 import unittest
 
@@ -13,7 +12,6 @@ from tauk.context.test_data import TestData
 from tauk.context.test_suite import TestSuite
 from tauk.enums import TestStatus, AutomationTypes, PlatformNames, BrowserNames
 from tauk.listeners.unittest_listener import TaukListener
-from tauk.tauk_webdriver import Tauk
 from tests.e2e.listeners.base_class.base_testcase import BaseTestCase
 from tests.utils import mock_success
 
@@ -28,7 +26,6 @@ class TestDataTest(BaseTestCase):
     @mock_success()
     def test_1_success_test_case_data(self):
         """verify test data"""
-        Tauk.register_driver(self.driver)
         self.driver.get('https://www.tauk.com')
 
         def validate(file_name, method_name, ctx: TaukContext, test_data: TestData, test_suite: TestSuite,
@@ -105,7 +102,6 @@ class TestDataTest(BaseTestCase):
 
     @mock_success(validation=validate_failure)
     def test_2_failure_test_case_data(self):
-        Tauk.register_driver(self.driver)
         self.driver.get('https://www.tauk.com')
         self.driver.find_element(By.ID, 'unknown-id')
 
@@ -113,4 +109,5 @@ class TestDataTest(BaseTestCase):
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestDataTest('test_1_success_test_case_data'))
+    suite.addTest(TestDataTest('test_2_failure_test_case_data'))
     unittest.TextTestRunner(resultclass=TaukListener).run(suite)

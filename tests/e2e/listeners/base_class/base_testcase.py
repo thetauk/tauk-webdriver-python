@@ -13,8 +13,9 @@ class BaseTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         self.options = Options()
-        # cls.options.headless = True
+        self.options.headless = True
         self.driver = webdriver.Chrome(options=self.options)
+        Tauk.register_driver(self.driver, unittestcase=self)
 
     def tearDown(self) -> None:
         if hasattr(self, 'driver') and self.driver:

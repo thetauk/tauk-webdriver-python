@@ -62,7 +62,7 @@ class Tauk:
         return Tauk.__context
 
     @classmethod
-    def get_testcase(cls, file_name, test_name):
+    def _get_testcase(cls, file_name, test_name):
         test_suite = Tauk.__context.test_data.get_test_suite(file_name)
         if test_suite is None:
             return None
@@ -90,24 +90,22 @@ class Tauk:
         if not Tauk.is_initialized():
             raise TaukException('driver can only be registered from test methods')
 
-        caller_frame_records = inspect.stack()
-        register_driver_stack_index = 0
-        found_register_driver = False
-
         if unittestcase:
             if not isinstance(unittestcase, unittest.TestCase):
                 raise TaukException(
                     f'argument unittestcase ({type(unittestcase)}) is not an instance of unittest.TestCase')
 
-            logger.debug('Creating testcase for driver initialized in unittest.TestCase')
             test_filename = inspect.getfile(unittestcase.__class__).replace(f'{os.getcwd()}{os.sep}', '')
-
-            test_case = TestCase()
-            test_case.method_name = unittestcase.id().split('.')[-1]
-            test_case.register_driver(driver)
-
-            Tauk.get_context().test_data.add_test_case(test_filename, test_case)
+            test_method_name = unittestcase.id().split('.')[-1]
+            test = Tauk._get_testcase(test_filename, test_method_name)
+            if test is None:
+                raise TaukException(f'TaukListener was not attached to unittest runner')
+            test.register_driver(driver)
             return
+
+        caller_frame_records = inspect.stack()
+        register_driver_stack_index = 0
+        found_register_driver = False
 
         for i, frame_info in enumerate(caller_frame_records):
             # We pick the next frame after register driver
@@ -115,7 +113,7 @@ class Tauk:
                 test_filename = frame_info.filename
                 test_relative_file_name = test_filename.replace(f'{os.getcwd()}{os.sep}', '')
                 test_method_name = frame_info.function
-                test = Tauk.get_testcase(test_relative_file_name, test_method_name)
+                test = Tauk._get_testcase(test_relative_file_name, test_method_name)
                 if test is None:
                     raise TaukException(
                         f'driver can only be registered with an active tauk listener or an observed method')
@@ -184,7 +182,7 @@ class Tauk:
     @classmethod
     def add_user_data(cls, name, value, test_file_name=None, test_method_name=None):
         if test_file_name and test_method_name:
-            test = Tauk.get_testcase(test_file_name, test_method_name)
+            test = Tauk._get_testcase(test_file_name, test_method_name)
             if test is None:
                 raise TaukException(f'user data can only be added withing the test method'
                                     f' Verify if {test_file_name} has @Tauk.observe decorator')
@@ -201,7 +199,7 @@ class Tauk:
                 test_file_name = frame_info.filename.replace(os.getcwd(), '')
                 test_method_name = frame_info.function
                 logger.info(f'[{i}] Found: {test_file_name}, {test_method_name}')
-                test = Tauk.get_testcase(test_file_name, test_method_name)
+                test = Tauk._get_testcase(test_file_name, test_method_name)
                 if test is None:
                     raise TaukException(f'Driver can only be registered for observed methods.'
                                         f' Verify if {test_file_name} has @Tauk.observe decorator')
