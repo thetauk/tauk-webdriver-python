@@ -30,11 +30,12 @@ class Tauk:
                              f'multi_process_run={multi_process_run}')
                 cls.instance = super(Tauk, cls).__new__(cls)
                 if not api_token or not project_id:
-                    logger.info('Looking for API token and project ID in environment variables')
                     api_token = os.getenv('TAUK_API_TOKEN')
                     project_id = os.getenv('TAUK_PROJECT_ID')
                     multi_process_run = os.getenv('TAUK_MULTI_PROCESS',
                                                   f'{multi_process_run}').lower().strip() == "true"
+                    logger.info(f'Environment variables contains api_token={api_token}, project_id={project_id},'
+                                f' multi_process_run={multi_process_run}')
 
                 if not multi_process_run and (not api_token or not project_id):
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
