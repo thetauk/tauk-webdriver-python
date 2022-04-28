@@ -86,7 +86,7 @@ def test_Contacts_AddNewContact(self):
 ```
 
 Alternatively if the driver object is constructed in a base class (Ex: in the `setUp()` method), 
-you also have to pass the `self` object using though `unittestcase` argument. 
+you also have to pass the `self` object as `unittestcase` argument. 
 This will allow Tauk to collect details about the test.
 
 ```python
