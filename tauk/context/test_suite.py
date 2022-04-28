@@ -1,6 +1,7 @@
 import typing
 
 from tauk.context.test_case import TestCase
+from tauk.exceptions import TaukException
 from tauk.utils import get_filtered_object
 
 
@@ -47,6 +48,10 @@ class TestSuite:
         return self._test_cases
 
     def add_testcase(self, testcase: TestCase):
+        for test in self.test_cases:
+            if test.method_name == testcase.method_name:
+                raise TaukException('cannot use TaukListener and Observer() for the same test')
+
         self.test_cases.append(testcase)
 
     def get_test_case(self, test_name) -> TestCase:
