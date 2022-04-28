@@ -17,7 +17,7 @@ class TaukContext:
 
     def __init__(self, api_token, project_id, multi_process_run=False):
         self.test_data: TestData = TestData()
-        self.exec_dir = self._get_exec_dir()
+        self.exec_dir = self._get_exec_dir(multi_process_run)
         self.exec_file = os.path.join(self.exec_dir, 'exec.run')
         self.api = TaukApi(api_token, project_id, multi_process_run)
 
@@ -29,14 +29,19 @@ class TaukContext:
             self.delete_execution_files()
 
         self.run_id = self._init_run()
-        logger.info(f'[{api_token}] Setting RUN ID: {self.run_id}')
 
-    def _get_exec_dir(self):
+    def _get_exec_dir(self, multi_process_run=False):
         if 'TAUK_EXEC_DIR' in os.environ and len(os.environ.get('TAUK_EXEC_DIR')) > 0:
             logger.debug(f'Using execution dir found in environment variable {os.environ.get("TAUK_EXEC_DIR")}')
             return os.environ.get('TAUK_EXEC_DIR')
 
         exec_home = os.path.join(os.environ.get('TAUK_HOME'), hashlib.md5(os.getcwd().encode()).hexdigest())
+
+        if not multi_process_run:
+            exec_dir = os.path.join(exec_home, 'exec')
+            logger.debug(f'Using execution dir at {exec_dir}')
+            return exec_dir
+
         parent_exec_dir = os.path.join(exec_home, f'{os.getppid()}')
         if os.path.exists(parent_exec_dir):
             logger.debug(f'Found exits execution dir at {parent_exec_dir}')
