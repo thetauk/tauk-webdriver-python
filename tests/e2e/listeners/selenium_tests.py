@@ -118,6 +118,7 @@ class TestDataTest(unittest.TestCase):
         t.assertNotIn('user_data', tc.keys(), 'user_data is not None')
         t.assertNotIn('log', tc.keys(), 'log is not None')
 
+    @unittest.expectedFailure
     @mock_success(validation=validate_failure)
     def test_2_failure_test_case_data(self):
         Tauk.register_driver(self.driver)

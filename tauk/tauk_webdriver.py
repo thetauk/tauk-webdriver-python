@@ -4,6 +4,7 @@ import inspect
 import logging
 import os
 import sys
+import unittest
 from datetime import datetime, timezone
 from functools import wraps
 from threading import Lock
@@ -29,11 +30,12 @@ class Tauk:
                              f'multi_process_run={multi_process_run}')
                 cls.instance = super(Tauk, cls).__new__(cls)
                 if not api_token or not project_id:
-                    logger.info('Looking for API token and project ID in environment variables')
                     api_token = os.getenv('TAUK_API_TOKEN')
                     project_id = os.getenv('TAUK_PROJECT_ID')
                     multi_process_run = os.getenv('TAUK_MULTI_PROCESS',
                                                   f'{multi_process_run}').lower().strip() == "true"
+                    logger.info(f'Environment variables contains api_token={api_token}, project_id={project_id},'
+                                f' multi_process_run={multi_process_run}')
 
                 if not multi_process_run and (not api_token or not project_id):
                     raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
@@ -81,26 +83,33 @@ class Tauk:
 
             del cls.instance
 
-    # TODO: Move identifier to unique method
+    # TODO: Move identifier to common method
     @classmethod
-    def register_driver(cls, driver, test_filename=None, test_method_name=None):
-        logger.info(f'Registering driver instance: '
-                    f'driver=[{driver}], test_file_name=[{test_filename}], test_method_name=[{test_method_name}]')
+    def register_driver(cls, driver, unittestcase=None):
+        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
+            logger.info(f'register_driver: Skipping driver registration for [{unittestcase.id()}] ---')
+            return
 
+        logger.info(f'Registering driver instance: driver=[{driver}], unittestcase=[{unittestcase}]')
         if not Tauk.is_initialized():
             raise TaukException('driver can only be registered from test methods')
+
+        if unittestcase:
+            if not isinstance(unittestcase, unittest.TestCase):
+                raise TaukException(
+                    f'argument unittestcase ({type(unittestcase)}) is not an instance of unittest.TestCase')
+
+            test_filename = inspect.getfile(unittestcase.__class__).replace(f'{os.getcwd()}{os.sep}', '')
+            test_method_name = unittestcase.id().split('.')[-1]
+            test = Tauk._get_testcase(test_filename, test_method_name)
+            if test is None:
+                raise TaukException(f'TaukListener was not attached to unittest runner')
+            test.register_driver(driver)
+            return
 
         caller_frame_records = inspect.stack()
         register_driver_stack_index = 0
         found_register_driver = False
-
-        if test_filename and test_method_name:
-            test = Tauk._get_testcase(test_filename, test_method_name)
-            if test is None:
-                raise TaukException(f'driver can only be registered for observed methods.'
-                                    f' Verify if {test_filename} has @Tauk.observe decorator')
-            test.register_driver(driver)
-            return
 
         for i, frame_info in enumerate(caller_frame_records):
             # We pick the next frame after register driver

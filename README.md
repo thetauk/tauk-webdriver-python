@@ -85,6 +85,16 @@ def test_Contacts_AddNewContact(self):
 	).click()
 ```
 
+Alternatively if the driver object is constructed in a base class (Ex: in the `setUp()` method), 
+you also have to pass the `self` object as `unittestcase` argument. 
+This will allow Tauk to collect details about the test.
+
+```python
+    def setUp(self) -> None:
+        self.driver = webdriver.Chrome()
+        Tauk.register_driver(self.driver, unittestcase=self)
+```
+
 _For sample code, please take a look at the `e2e/custom_integration_test.py` test case in the `tests` directory of the repository._
 
 
