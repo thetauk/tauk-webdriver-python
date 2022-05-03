@@ -86,8 +86,11 @@ class Tauk:
     # TODO: Move identifier to common method
     @classmethod
     def register_driver(cls, driver, unittestcase=None):
-        logger.info(f'Registering driver instance: driver=[{driver}], unittestcase=[{unittestcase}]')
+        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
+            logger.info(f'register_driver: Skipping driver registration for [{unittestcase.id()}] ---')
+            return
 
+        logger.info(f'Registering driver instance: driver=[{driver}], unittestcase=[{unittestcase}]')
         if not Tauk.is_initialized():
             raise TaukException('driver can only be registered from test methods')
 
