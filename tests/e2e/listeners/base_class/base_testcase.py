@@ -9,6 +9,7 @@ class BaseTestCase(unittest.TestCase):
     expected_run_id = '6d917db6-cf5d-4f30-8303-6eefc35e7558'
     options = Options()
     driver = None
+    tauk_skip = False
 
     def setUp(self) -> None:
         self.options = Options()
