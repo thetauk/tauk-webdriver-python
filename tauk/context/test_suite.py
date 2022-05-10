@@ -2,7 +2,6 @@ import typing
 
 from tauk.context.test_case import TestCase
 from tauk.exceptions import TaukException
-from tauk.utils import get_filtered_object
 
 
 class TestSuite:
@@ -12,12 +11,14 @@ class TestSuite:
         self.class_name = None
         self._test_cases: typing.List[TestCase] = []
 
-    def __getstate__(self):
-        state = get_filtered_object(self, include_private=True)
-        return state
-
-    def __deepcopy__(self, memodict={}):
-        return self
+    def to_json(self):
+        json = {
+            'filename': self.filename,
+            'name': self.name,
+            'class_name': self.class_name,
+            'test_cases': [test.to_json() for test in self.test_cases]
+        }
+        return {k: v for k, v in json.items() if v}
 
     @property
     def filename(self):
@@ -53,6 +54,11 @@ class TestSuite:
                 raise TaukException('cannot use TaukListener and Observer() for the same test')
 
         self.test_cases.append(testcase)
+
+    def remove_testcase(self, test_method_name):
+        # TODO: Implement thread safe delete
+        pass
+
 
     def get_test_case(self, test_name) -> TestCase:
         for test in self.test_cases:

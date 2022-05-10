@@ -11,12 +11,12 @@ import typing
 from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames
 from tauk.exceptions import TaukException
-from tauk.utils import get_filtered_object, get_appium_server_version, get_browser_driver_version
+from tauk.utils import get_appium_server_version, get_browser_driver_version
 
 logger = logging.getLogger('tauk')
 
 
-class TestCase:
+class TestCase(object):
 
     def __init__(self) -> None:
         self._id: str = None
@@ -46,18 +46,36 @@ class TestCase:
 
         self._driver_instance = None
 
-    def __getstate__(self):
-        state = get_filtered_object(self, include_private=True,
-                                    filter_keys=[
-                                        '_driver_instance',
-                                        'excluded'
-                                    ])
-        if self.excluded is True:
-            self.status = TestStatus.EXCLUDED
-        return state
+    # NOTE: Any object that should be a part of test case should be explicitly added to to_json()
+    #       method
+    def to_json(self):
+        json = {
+            'id': self.id,
+            'custom_name': self.custom_name,
+            'method_name': self.method_name,
+            'status': TestStatus.EXCLUDED if self.excluded else self.status,
+            'automation_type': self.automation_type,
+            'platform_name': self.platform_name,
+            'platform_version': self.platform_version,
+            'browser_name': self.browser_name,
+            'browser_version': self.browser_version,
+            'start_timestamp': self.start_timestamp,
+            'end_timestamp': self.end_timestamp,
+            'timezone': self.timezone,
+            'error': self.error,
+            'screenshot': self.screenshot,
+            'view': self.view,
+            'code_context': self.code_context,
+            'webdriver_client_version': self.webdriver_client_version,
+            'browser_driver_version': self.browser_driver_version,
+            'appium_server_version': self.appium_server_version,
+            'capabilities': self.capabilities,
+            'tags': self.tags,
+            'user_data': self.user_data,
+            'log': self.log,
+        }
 
-    def __deepcopy__(self, memodict={}):
-        return self
+        return {k: v for k, v in json.items() if v}
 
     @property
     def id(self):
@@ -263,7 +281,8 @@ class TestCase:
             'error_msg': str(exc_value),
             'line_number': line_number,
             'invoked_func': invoked_func,
-            'code_executed': code_executed
+            'code_executed': code_executed,
+            'traceback': traceback.format_exc()
         }
         return line_number
 
