@@ -172,8 +172,9 @@ class Tauk:
                 finally:
                     test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
-                    Tauk.__context.api.upload(
-                        Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name))
+                    json_test_data = Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name)
+                    Tauk.__context.api.upload(json_test_data)
+                    Tauk.__context.test_data.delete_test_case(caller_relative_filename, test_case.method_name)
 
             return invoke_test_case
 
