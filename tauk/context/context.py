@@ -1,6 +1,5 @@
 import hashlib
 import logging
-import copy
 import os
 import uuid
 import jsonpickle
@@ -104,25 +103,21 @@ class TaukContext:
             set_exec_file(self._init_run(), self.api.get_api_token(), self.api.get_project_id())
             logger.debug(f'Execution unlocked for {self.exec_file}')
 
-    def print(self):
-        print('-------- Test Data ---------------')
-        print(jsonpickle.encode(self.test_data, unpicklable=False, indent=3))
-        print('-------- Test Data ---------------')
-
     def get_json_test_data(self, test_suite_filename, test_method_name):
         suite = self.test_data.get_test_suite(test_suite_filename)
         if not suite:
             raise TaukException(f'Could not find suite with filename {test_suite_filename}')
 
-        suite_copy = copy.deepcopy(suite)
+        suite_json = suite.to_json()
+
         # Clean up tests
-        for test in suite_copy.test_cases:
-            if test.method_name != test_method_name:
-                suite_copy.test_cases.remove(test)
+        for test in suite_json.get('test_cases'):
+            if test.get('method_name') != test_method_name:
+                suite_json.get('test_cases').remove(test)
 
         json_data = {
             "test_suites": [
-                suite_copy
+                suite_json
             ]
         }
 

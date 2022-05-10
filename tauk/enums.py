@@ -1,6 +1,9 @@
+import logging
 from enum import Enum, unique
 
 from tauk.exceptions import TaukException
+
+logger = logging.getLogger('tauk')
 
 
 @unique
@@ -34,7 +37,7 @@ class BrowserNames(Enum):
         elif 'safari' in name.lower():
             return BrowserNames.SAFARI
         else:
-            raise TaukException(f'unable to resolve browser name {name}')
+            logger.warning(f'Unsupported browser name {name}')
 
 
 @unique

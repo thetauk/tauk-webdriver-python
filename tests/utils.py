@@ -48,11 +48,10 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
 
     def inner_decorator(func):
         caller_filename = None
-        test_method_name = None
+        test_method_name = func.__name__
         for frame_info in inspect.stack():
             if all(elem in frame_info.frame.f_code.co_names for elem in ['Tauk', 'observe']):
                 caller_filename = frame_info.filename.replace(f'{os.getcwd()}{os.sep}', '')
-                test_method_name = frame_info.frame.f_code.co_names[-1]
                 break
 
         @wraps(func)
