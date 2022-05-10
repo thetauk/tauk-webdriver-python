@@ -43,14 +43,14 @@ class TestDataTest(unittest.TestCase):
     @Tauk.observe(custom_test_name='custom name')
     def test_1_success_test_case_data(self):
         Tauk.register_driver(TestDataTest.driver)
-        self.driver.get('https://www.tauk.com')
+        self.driver.get('https://www.tauk.com?1')
 
         def validate(file_name, method_name, ctx: TaukContext, test_data: TestData, test_suite: TestSuite,
                      test_case: TestCase):
             json_data = jsonpickle.decode(ctx.get_json_test_data(file_name, method_name))
             tc = json_data['test_suites'][0]['test_cases'][0]
             self.assertEqual(tc['custom_name'], 'custom name', 'Invalid custom name')
-            self.assertEqual(tc['method_name'], 'test_success_test_case_data', 'Invalid method name')
+            self.assertEqual(tc['method_name'], 'test_1_success_test_case_data', 'Invalid method name')
             self.assertEqual(tc['status'], TestStatus.PASSED.value, 'Invalid test status')
             self.assertEqual(tc['automation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
             self.assertEqual(tc['platform_name'], PlatformNames.MACOS.value, 'Invalid platform name')
@@ -80,12 +80,13 @@ class TestDataTest(unittest.TestCase):
 
     def validate_failure(file_name, method_name, ctx: TaukContext, test_data: TestData, test_suite: TestSuite,
                          test_case: TestCase):
-        json_data = jsonpickle.decode(ctx.get_json_test_data(file_name, method_name))
+        json_test_data = ctx.get_json_test_data(file_name, method_name)
+        json_data = jsonpickle.decode(json_test_data)
         tc = json_data['test_suites'][0]['test_cases'][0]
         t = unittest.TestCase()
         t.assertEqual(tc['method_name'], 'test_2_failure_test_case_data', 'Invalid method name')
         t.assertEqual(tc['status'], TestStatus.FAILED.value, 'Invalid test status')
-        t.assertEqual(tc['aucatomation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
+        t.assertEqual(tc['automation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
         t.assertEqual(tc['platform_name'], PlatformNames.MACOS.value, 'Invalid platform name')
         t.assertEqual(tc['browser_name'], BrowserNames.CHROME.value, 'Invalid browser name')
         t.assertTrue(len(tc['browser_version']) > 0, f'Invalid browser version {tc["browser_version"]}')
@@ -117,12 +118,13 @@ class TestDataTest(unittest.TestCase):
         t.assertNotIn('user_data', tc.keys(), 'user_data is not None')
         t.assertNotIn('log', tc.keys(), 'log is not None')
 
+    @unittest.expectedFailure
     @mock_success(validation=validate_failure, init_tauk=True)
     @Tauk.observe()
     def test_2_failure_test_case_data(self):
-        print(Tauk.get_context().test_data)
+        print(Tauk.get_context().test_data.test_suites[0].test_cases)
         Tauk.register_driver(self.driver)
-        self.driver.get('https://www.tauk.com')
+        self.driver.get('https://www.tauk.com?2')
         self.driver.find_element(By.ID, 'unknown-id')
 
 
