@@ -216,10 +216,11 @@ class TestCase:
             self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
 
         self.platform_version = self.capabilities.get('platformVersion', None)
-        self.browser_name = BrowserNames.resolve(self.capabilities.get('browserName', ''))
-        self.browser_version = self.capabilities.get('browserVersion', None)
 
-        self.browser_driver_version = get_browser_driver_version(driver)
+        if self.capabilities.get('browserName', None):
+            self.browser_name = BrowserNames.resolve(self.capabilities.get('browserName', ''))
+            self.browser_version = self.capabilities.get('browserVersion', None)
+            self.browser_driver_version = get_browser_driver_version(driver)
 
     def capture_screenshot(self):
         if self.screenshot and len(self.screenshot) > 0:
