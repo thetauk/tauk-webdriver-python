@@ -229,9 +229,12 @@ class TestCase(object):
                 self.appium_server_version = get_appium_server_version(driver)
 
         if self.automation_type is AutomationTypes.APPIUM:
-            self.platform_name = PlatformNames.resolve(self.capabilities.get('platform', ''))
-        else:
+            # Fetching the platformName returns the OS name at the remote-end
             self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
+
+            # Check for Safari on iOS or Chrome on Android
+            if self.capabilities.get('browserName'):
+                self.browser_name = BrowserNames.resolve(self.capabilities.get('browserName', ''))
 
         self.platform_version = self.capabilities.get('platformVersion', None)
 
