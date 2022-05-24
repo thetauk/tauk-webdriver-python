@@ -46,9 +46,8 @@ class TaukListener(unittest.TestResult):
             except Exception as exc:
                 logger.error('Failed to close browser debugger page', exc_info=exc)
 
-        for _, att in testcase.attachments:
+        for file_path, attachment_type in testcase.attachments:
             try:
-                file_path, attachment_type = att[0], att[1]
                 Tauk.get_context().api.upload_attachment(file_path, attachment_type, testcase.id)
                 # If it's a companion attachment we should delete it after successful upload
                 if attachment_type.is_companion_attachment():
@@ -56,7 +55,7 @@ class TaukListener(unittest.TestResult):
                         logger.debug(f'Deleting companion attachment {file_path}')
                         os.remove(file_path)
             except Exception as ex:
-                logger.error(f'Failed to upload attachment {att}', exc_info=ex)
+                logger.error(f'Failed to upload attachment {attachment_type}: {file_path}', exc_info=ex)
 
     def startTestRun(self) -> None:
         logger.info("# Test Run Started ---")
