@@ -130,7 +130,7 @@ class TaukApi:
             raise TaukException('failed to upload test results')
 
         logger.debug(f'Response: {response.text}')
-        return response.json().get('external_test_id')
+        return response.json().get('result')
 
     def upload_attachment(self, file_path, attachment_type: AttachmentTypes, test_id):
         if not test_id:

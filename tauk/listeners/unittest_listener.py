@@ -102,10 +102,10 @@ class TaukListener(unittest.TestResult):
             ctx = Tauk.get_context()
 
             caller_filename = inspect.getfile(test.__class__)
-            caller_relative_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
-            self.tests[test.id()].id = ctx.api.upload(
-                ctx.get_json_test_data(caller_relative_filename, self.tests[test.id()].method_name))
-
+            caller_rel_filename = os.path.relpath(caller_filename, os.getcwd())
+            upload_result = ctx.api.upload(
+                ctx.get_json_test_data(caller_rel_filename, self.tests[test.id()].method_name))
+            self.tests[test.id()].id = upload_result.get(caller_rel_filename).get(self.tests[test.id()].method_name)
             self._upload_attachments(self.tests[test.id()])
 
         except Exception as ex:
