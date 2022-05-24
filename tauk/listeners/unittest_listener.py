@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Dict
 
 from tauk.context.test_case import TestCase
-from tauk.enums import TestStatus
+from tauk.enums import TestStatus, AutomationTypes, AttachmentTypes
 from tauk.tauk_webdriver import Tauk
 
 logger = logging.getLogger('tauk')
@@ -17,12 +17,46 @@ class TaukListener(unittest.TestResult):
     multiprocess_run = False
 
     def __init__(self, stream, descriptions, verbosity):
-        self.tests = None
+        self.tests: Dict[str, TestCase] = {}
         self.test_filename = None
         super().__init__(stream, descriptions, verbosity)
 
     def _should_observe(self, test):
         return hasattr(test, 'tauk_skip') and test.tauk_skip is True
+
+    def _upload_attachments(self, testcase: TestCase):
+        companion = Tauk.get_context().companion
+        if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
+            try:
+                connected_page = companion.get_connected_page(testcase.browser_debugger_address)
+                logger.debug(f'Collecting logs from the page {connected_page}')
+                if connected_page:
+                    try:
+                        companion.close_page(testcase.browser_debugger_address)
+                    except Exception:
+                        pass
+                    attachment_path = os.path.join(Tauk.get_context().exec_dir, 'companion', connected_page.lower())
+                    companion_attachments = next(os.walk(attachment_path), (None, None, []))[2]  # only files
+                    if len(companion_attachments) == 0:
+                        logger.info('Did not find any companion attachments')
+                    for attachment in companion_attachments:
+                        testcase.add_attachment(
+                            os.path.join(attachment_path, attachment),
+                            AttachmentTypes.resolve_companion_log(attachment))
+            except Exception as exc:
+                logger.error('Failed to close browser debugger page', exc_info=exc)
+
+        for _, att in testcase.attachments:
+            try:
+                file_path, attachment_type = att[0], att[1]
+                Tauk.get_context().api.upload_attachment(file_path, attachment_type, testcase.id)
+                # If it's a companion attachment we should delete it after successful upload
+                if attachment_type.is_companion_attachment():
+                    if os.path.exists(file_path):
+                        logger.debug(f'Deleting companion attachment {file_path}')
+                        os.remove(file_path)
+            except Exception as ex:
+                logger.error(f'Failed to upload attachment {att}', exc_info=ex)
 
     def startTestRun(self) -> None:
         logger.info("# Test Run Started ---")
@@ -63,12 +97,18 @@ class TaukListener(unittest.TestResult):
         logger.info(f'# Test Stopped [{test.id()}] ---')
         try:
             self.tests[test.id()].end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-            self.tests[test.id()].capture_appium_logs()
+            if self.tests[test.id()].automation_type is AutomationTypes.APPIUM:
+                self.tests[test.id()].capture_appium_logs()
+
             ctx = Tauk.get_context()
 
             caller_filename = inspect.getfile(test.__class__)
             caller_relative_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
-            ctx.api.upload(ctx.get_json_test_data(caller_relative_filename, self.tests[test.id()].method_name))
+            self.tests[test.id()].id = ctx.api.upload(
+                ctx.get_json_test_data(caller_relative_filename, self.tests[test.id()].method_name))
+
+            self._upload_attachments(self.tests[test.id()])
+
         except Exception as ex:
             logger.error('Failed to upload test results', exc_info=ex)
 

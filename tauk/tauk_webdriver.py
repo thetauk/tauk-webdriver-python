@@ -9,8 +9,10 @@ from datetime import datetime, timezone
 from functools import wraps
 from threading import Lock
 
+from tauk.companion.companion import CompanionConfig
 from tauk.context.context import TaukContext
-from tauk.exceptions import TaukException
+from tauk.enums import AutomationTypes, AttachmentTypes
+from tauk.exceptions import TaukException, TaukTestMethodNotFound
 from tauk.context.test_data import TestCase
 
 logger = logging.getLogger('tauk')
@@ -23,7 +25,12 @@ class Tauk:
     __context: TaukContext
 
     # TODO: Add documentation
-    def __new__(cls, api_token=None, project_id=None, multi_process_run=False, cleanup_exec_context=True):
+    # TODO: Implement Tauk config
+    def __new__(cls, api_token: str = None, project_id: str = None,
+                multi_process_run=False,
+                cleanup_exec_context=True,
+                companion: CompanionConfig = None
+                ):
         with mutex:
             if Tauk.instance is None:
                 logger.debug(f'Creating new Tauk instance with api_token={api_token}, project_id={project_id}, '
@@ -38,11 +45,15 @@ class Tauk:
                                 f' multi_process_run={multi_process_run}')
 
                 if not multi_process_run and (not api_token or not project_id):
-                    raise TaukException('Please ensure that a valid TAUK_API_TOKEN and TAUK_PROJECT_ID is set')
+                    raise TaukException('Valid TAUK_API_TOKEN and TAUK_PROJECT_ID environment variables must be set')
 
-                Tauk.__context = TaukContext(api_token, project_id, multi_process_run=multi_process_run)
+                if companion and not isinstance(companion, CompanionConfig):
+                    raise TaukException('Invalid companion config')
 
-                if multi_process_run and cleanup_exec_context:
+                Tauk.__context = TaukContext(api_token, project_id,
+                                             multi_process_run=multi_process_run, companion_config=companion)
+
+                if cleanup_exec_context:
                     atexit.register(Tauk.destroy)
 
             return cls.instance
@@ -73,6 +84,34 @@ class Tauk:
         return test_case
 
     @classmethod
+    def _get_test_method_details(cls, unittestcase=None, func_name=None, ref_frame=None):
+        if unittestcase:
+            if not isinstance(unittestcase, unittest.TestCase):
+                raise TaukException(
+                    f'argument unittestcase ({type(unittestcase)}) is not an instance of unittest.TestCase')
+
+            file_name = inspect.getfile(unittestcase.__class__)
+            method_name = unittestcase.id().split('.')[-1]
+            return file_name, os.path.relpath(file_name, os.getcwd()), method_name
+        elif not func_name and not ref_frame:
+            raise TaukException('expecting either function name or reference frame function name')
+
+        found_ref_frame = False
+        for i, frame_info in enumerate(inspect.stack()):
+            if func_name and func_name in frame_info.frame.f_code.co_names:
+                file_name = frame_info.filename
+                method_name = func_name
+                return file_name, os.path.relpath(file_name, os.getcwd()), method_name
+            elif ref_frame and found_ref_frame:
+                file_name = frame_info.filename
+                method_name = frame_info.function
+                return file_name, os.path.relpath(file_name, os.getcwd()), method_name
+            elif ref_frame and frame_info.function == ref_frame:
+                found_ref_frame = True
+
+        raise TaukTestMethodNotFound('failed to find test method details')
+
+    @classmethod
     def destroy(cls):
         if Tauk.is_initialized():
             logger.debug('Destroying Tauk context')
@@ -81,54 +120,63 @@ class Tauk:
             except Exception as ex:
                 logger.error('Failed to delete execution file', exc_info=ex)
 
+            try:
+                if Tauk.__context.companion.is_running():
+                    Tauk.__context.companion.kill()
+            except Exception as ex:
+                logger.error('Failed to kill companion app', exc_info=ex)
+
             del cls.instance
 
     # TODO: Move identifier to common method
     @classmethod
     def register_driver(cls, driver, unittestcase=None):
+        # Skip registering driver if there is a local variable called tauk_skip
         if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
-            logger.info(f'register_driver: Skipping driver registration for [{unittestcase.id()}] ---')
+            logger.info(f'Tauk.register_driver: Skipping driver registration for [{unittestcase.id()}]')
             return
 
         logger.info(f'Registering driver instance: driver=[{driver}], unittestcase=[{unittestcase}]')
         if not Tauk.is_initialized():
             raise TaukException('driver can only be registered from test methods')
 
-        if unittestcase:
-            if not isinstance(unittestcase, unittest.TestCase):
-                raise TaukException(
-                    f'argument unittestcase ({type(unittestcase)}) is not an instance of unittest.TestCase')
+        _, relative_file_name, method_name = Tauk._get_test_method_details(
+            unittestcase=unittestcase, ref_frame=Tauk.register_driver.__name__)
+        test = Tauk._get_testcase(relative_file_name, method_name)
+        if test is None:
+            raise TaukException(f'TaukListener was not attached to unittest runner')
+        test.register_driver(driver, Tauk.__context.companion, relative_file_name, method_name)
 
-            test_filename = inspect.getfile(unittestcase.__class__).replace(f'{os.getcwd()}{os.sep}', '')
-            test_method_name = unittestcase.id().split('.')[-1]
-            test = Tauk._get_testcase(test_filename, test_method_name)
-            if test is None:
-                raise TaukException(f'TaukListener was not attached to unittest runner')
-            test.register_driver(driver)
-            return
+    # TODO: Refactor and remove duplicate code
+    def _upload_attachments(cls, testcase: TestCase):
+        companion = Tauk.get_context().companion
+        if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
+            try:
+                connected_page = companion.get_connected_page(testcase.browser_debugger_address)
+                if connected_page:
+                    companion.close_page(testcase.browser_debugger_address)
+                    attachment_path = os.path.join(Tauk.get_context().exec_dir, 'companion', connected_page.lower())
+                    companion_attachments = next(os.walk(attachment_path), (None, None, []))[2]  # only files
+                    if len(companion_attachments) == 0:
+                        logger.info('Did not find any companion attachments')
+                    for attachment in companion_attachments:
+                        testcase.add_attachment(
+                            os.path.join(attachment_path, attachment),
+                            AttachmentTypes.resolve_companion_log(attachment))
+            except Exception as exc:
+                logger.error('Failed to close browser debugger page', exc_info=exc)
 
-        caller_frame_records = inspect.stack()
-        register_driver_stack_index = 0
-        found_register_driver = False
-
-        for i, frame_info in enumerate(caller_frame_records):
-            # We pick the next frame after register driver
-            if found_register_driver:
-                test_filename = frame_info.filename
-                test_relative_file_name = test_filename.replace(f'{os.getcwd()}{os.sep}', '')
-                test_method_name = frame_info.function
-                test = Tauk._get_testcase(test_relative_file_name, test_method_name)
-                if test is None:
-                    raise TaukException(
-                        f'driver can only be registered with an active tauk listener or an observed method')
-                test.register_driver(driver, test_filename, test_method_name)
-                return
-
-            if frame_info.function == 'register_driver':
-                found_register_driver = True
-                register_driver_stack_index = i
-
-        raise TaukException(f'driver(2) can only be registered with an active tauk listener or an observed method')
+        for _, att in testcase.attachments:
+            try:
+                file_path, attachment_type = att[0], att[1]
+                Tauk.get_context().api.upload_attachment(file_path, attachment_type, testcase.id)
+                # If it's a companion attachment we should delete it after successful upload
+                if attachment_type.is_companion_attachment():
+                    if os.path.exists(file_path):
+                        logger.debug(f'Deleting companion attachment {file_path}')
+                        os.remove(file_path)
+            except Exception as ex:
+                logger.error(f'Failed to upload attachment {att}', exc_info=ex)
 
     @classmethod
     def observe(cls, custom_test_name=None, excluded=False):
@@ -139,18 +187,11 @@ class Tauk:
             test_case = TestCase()
             test_case.custom_name = custom_test_name
             test_case.excluded = excluded
+            test_case.method_name = func.__name__
 
-            all_frames = inspect.stack()
-            caller_filename = None
-            caller_relative_filename = None
-            for frame_info in all_frames:
-                if func.__name__ in frame_info.frame.f_code.co_names:
-                    caller_filename = frame_info.filename
-                    caller_relative_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
-                    test_case.method_name = func.__name__
-                    Tauk() if not Tauk.is_initialized() else None
-                    Tauk.__context.test_data.add_test_case(caller_relative_filename, test_case)
-                    break
+            file_name, relative_file_name, _ = Tauk._get_test_method_details(func_name=test_case.method_name)
+            Tauk() if not Tauk.is_initialized() else None
+            Tauk.__context.test_data.add_test_case(relative_file_name, test_case)
 
             @wraps(func)
             def invoke_test_case(*args, **kwargs):
@@ -159,22 +200,24 @@ class Tauk:
                     result = func(*args, **kwargs)
                     test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     test_case.capture_success_data()
-                except:
+                except Exception:
                     test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
                     test_case.capture_failure_data()
-                    error_line_number = test_case.capture_error(caller_filename, sys.exc_info())
+                    error_line_number = test_case.capture_error(file_name, sys.exc_info())
                     test_case.capture_test_steps(testcase=func, error_line_number=error_line_number)
-
-                    # TODO: cleanup stack track here
                     raise
                 else:
                     return result
                 finally:
-                    test_case.capture_appium_logs()
+                    if test_case.automation_type == AutomationTypes.APPIUM:
+                        test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
-                    json_test_data = Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name)
-                    Tauk.__context.api.upload(json_test_data)
-                    Tauk.__context.test_data.delete_test_case(caller_relative_filename, test_case.method_name)
+                    json_test_data = Tauk.__context.get_json_test_data(relative_file_name, test_case.method_name)
+                    test_case.id = Tauk.__context.api.upload(json_test_data)
+
+                    Tauk._upload_attachments(test_case)
+
+                    Tauk.__context.test_data.delete_test_case(relative_file_name, test_case.method_name)
 
             return invoke_test_case
 
@@ -185,7 +228,7 @@ class Tauk:
         pass
 
     @classmethod
-    def add_user_data(cls, name, value, test_file_name=None, test_method_name=None):
+    def add_user_data(cls, name, value, unittestcase=None, test_file_name=None, test_method_name=None):
         if test_file_name and test_method_name:
             test = Tauk._get_testcase(test_file_name, test_method_name)
             if test is None:
@@ -194,26 +237,34 @@ class Tauk:
             test.add_user_data(name, value)
             return
 
-        caller_frame_records = inspect.stack()
-        found_register_driver = False
+        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
+            logger.info(f'Tauk.add_user_data: Skipping user data for [{unittestcase.id()}]')
+            return
 
-        for i, frame_info in enumerate(caller_frame_records):
-            # We pick the next frame after register driver
-            logger.info(f'[{i}] Checking function: {frame_info.function}')
-            if found_register_driver:
-                test_file_name = frame_info.filename.replace(os.getcwd(), '')
-                test_method_name = frame_info.function
-                logger.info(f'[{i}] Found: {test_file_name}, {test_method_name}')
-                test = Tauk._get_testcase(test_file_name, test_method_name)
-                if test is None:
-                    raise TaukException(f'Driver can only be registered for observed methods.'
-                                        f' Verify if {test_file_name} has @Tauk.observe decorator')
-                test.add_user_data(name, value)
-                return
+        _, relative_file_name, method_name = Tauk._get_test_method_details(
+            unittestcase=unittestcase, ref_frame=Tauk.add_user_data.__name__)
+        test = Tauk._get_testcase(relative_file_name, method_name)
+        if test is None:
+            raise TaukException(f'user data can only be added within testcase')
+        test.add_user_data(name, value)
 
-            if frame_info.function == 'register_driver':
-                found_register_driver = True
-                register_driver_stack_index = i
+    @classmethod
+    def add_attachment(cls, attachment, unittestcase=None, test_file_name=None, test_method_name=None):
+        if test_file_name and test_method_name:
+            test = Tauk._get_testcase(test_file_name, test_method_name)
+            if test is None:
+                raise TaukException(f'user data can only be added withing the test method'
+                                    f' Verify if {test_file_name} has @Tauk.observe decorator')
+            test.add_attachment(attachment)
+            return
 
-        raise TaukException(f'Driver can only be registered for observed methods.'
-                            f' Verify if {test_file_name} has @Tauk.observe decorator')
+        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
+            logger.info(f'Tauk.add_user_data: Skipping user data for [{unittestcase.id()}]')
+            return
+
+        _, relative_file_name, method_name = Tauk._get_test_method_details(
+            unittestcase=unittestcase, ref_frame=Tauk.add_user_data.__name__)
+        test = Tauk._get_testcase(relative_file_name, method_name)
+        if test is None:
+            raise TaukException(f'user data can only be added within testcase')
+        test.add_attachment(attachment)
