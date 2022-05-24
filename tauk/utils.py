@@ -1,5 +1,8 @@
 import logging
 import re
+from contextlib import closing
+import socket
+
 import requests
 
 logger = logging.getLogger('tauk')
@@ -27,6 +30,26 @@ def get_browser_driver_version(driver):
         return driver.capabilities['msedge']['msedgedriverVersion']
     else:
         return None
+
+
+def get_browser_debugger_address(driver):
+    browser_name = driver.capabilities.get('browserName', '')
+    if browser_name == 'chrome':
+        return driver.capabilities['goog:chromeOptions']['debuggerAddress']
+    elif browser_name == 'firefox':
+        return driver.capabilities['moz:debuggerAddress']
+    elif browser_name == 'msedge':
+        return driver.capabilities['ms:edgeOptions']['debuggerAddress']
+    else:
+        return None
+
+
+def get_open_port(port_range):
+    for port in port_range:
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+            if sock.connect_ex(('0.0.0.0', port)) != 0:
+                return port
+    return None
 
 
 def shortened_json(json_text):
