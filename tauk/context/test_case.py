@@ -1,6 +1,8 @@
 import logging
+import os.path
 import re
 from contextlib import suppress
+from pathlib import Path
 
 import tzlocal
 import inspect
@@ -8,10 +10,11 @@ import inspect
 import traceback
 import typing
 
+from tauk.companion.companion import TaukCompanion
 from tauk.context.test_error import TestError
-from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames
+from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames, AttachmentTypes
 from tauk.exceptions import TaukException
-from tauk.utils import get_appium_server_version, get_browser_driver_version
+from tauk.utils import get_appium_server_version, get_browser_driver_version, get_browser_debugger_address
 
 logger = logging.getLogger('tauk')
 
@@ -39,6 +42,8 @@ class TestCase(object):
         self.webdriver_client_version: str = None
         self.browser_driver_version: str = None
         self.appium_server_version: str = None
+        self._browser_debugger_address = None
+        self._attachments: typing.List[tuple] = []
         self._capabilities: {} = None
         self._tags: {} = None
         self._user_data: {} = None
@@ -193,19 +198,47 @@ class TestCase(object):
     def driver_instance(self, driver_instance):
         self._driver_instance = driver_instance
 
-    def register_driver(self, driver, test_filename=None, test_method_name=None):
+    @property
+    def browser_debugger_address(self):
+        return self._browser_debugger_address
+
+    @property
+    def attachments(self):
+        return self._attachments
+
+    def _connect_to_browser_debugger(self, companion: TaukCompanion):
+        try:
+            # TODO: Investigate possibility of using on appium
+            companion.register_browser(self._browser_debugger_address)
+            page_id = companion.connect_page(self._browser_debugger_address)
+        except Exception as ex:
+            logger.error('Failed to connect to browser debugger', exc_info=ex)
+
+    def register_driver(self, driver, companion: TaukCompanion = None, test_filename=None, test_method_name=None):
         if not driver or 'webdriver' not in f'{type(driver)}':
             raise TaukException(f'Driver {type(driver)} is not of type webdriver')
 
+        # Attach Tauk data to webdriver object so that if it's quit within the test
+        # we can collect necessary details before exiting
         if test_filename:
             driver.tauk_test_filename = test_filename
         if test_method_name:
             driver.tauk_test_method_name = test_method_name
 
+        self._browser_debugger_address = get_browser_debugger_address(driver)
+        if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
+            self._connect_to_browser_debugger(companion)
+
         def tauk_callback(func):
             def inner():
                 self.capture_screenshot()
                 self.capture_view_hierarchy()
+                # TODO: Remove this?
+                # if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
+                #     try:
+                #         companion.close_page(self.browser_debugger_address)
+                #     except Exception as exc:
+                #         logger.error('Failed to close browser debugger page', exc_info=exc)
                 func()
 
             return inner
@@ -351,9 +384,6 @@ class TestCase(object):
                 output.append(formatted_event)
             return output
 
-        if self.automation_type != AutomationTypes.APPIUM:
-            return
-
         # Get last 50 log entries
         # minus the 5 log entries for issuing get_log()
         slice_range = slice(-55, -5)
@@ -366,3 +396,15 @@ class TestCase(object):
             self.log = format_appium_log(self.driver_instance.get_log('server')[slice_range])
         except Exception as ex:
             logger.error('An issue occurred while requesting the Appium server logs.', exc_info=ex)
+
+    def add_attachment(self, file_path, attachment_type: AttachmentTypes):
+        path = Path(file_path)
+        if not path.exists() or not path.is_file():
+            raise TaukException(f'file not found {path}')
+
+        # Validate file size
+        size = os.path.getsize(path)
+        if size > 1 << 20:  # 10 MB
+            raise TaukException(f'attachment file size [{size}] cannot be greater than 10mb')
+
+        self._attachments.append((file_path, attachment_type))
