@@ -261,10 +261,10 @@ class TestCase(object):
                 self.webdriver_client_version = library_version()
                 self.appium_server_version = get_appium_server_version(driver)
 
-        if self.automation_type is AutomationTypes.APPIUM:
-            self.platform_name = PlatformNames.resolve(self.capabilities.get('platform', ''))
-        else:
-            self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
+        # This identifies the operating system at the remote-end,
+        # fetching the platformName returns the OS name.
+        # In cloud-based providers, setting platformName sets the OS at the remote-end.
+        self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
 
         self.platform_version = self.capabilities.get('platformVersion', None)
 
