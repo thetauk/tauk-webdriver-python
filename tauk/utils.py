@@ -53,7 +53,8 @@ def get_open_port(port_range):
 
 
 def shortened_json(json_text):
+    # TODO: Revisit view because its not getting stripped
     json_text = re.sub(r'"screenshot": ".+?"', '"screenshot" : "stripped"', json_text, flags=re.DOTALL)
-    json_text = re.sub(r'"view": ".+?", ', '"view" : "stripped", ', json_text, flags=re.DOTALL)
+    json_text = re.sub(r'"view": ".+?", "', '"view" : "stripped", ', json_text, flags=re.DOTALL)
     json_text = re.sub(r'"log": \[.+?}\], "', '"log": ["stripped"], "', json_text, flags=re.DOTALL)
     return json_text
