@@ -7,6 +7,7 @@ import requests
 
 import tauk
 from tauk.context.test_data import TestData
+from tauk.enums import AttachmentTypes
 from tauk.exceptions import TaukException
 from tauk.utils import shortened_json
 
@@ -87,10 +88,10 @@ class TaukApi:
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
         if response.status_code != 200:
-            logger.error(f'Failed to upload test. Response: {response.text}')
-            raise TaukException('failed to upload test results')
+            logger.error(f'Failed to register test start. Response: {response.text}')
+            raise TaukException('failed to register test start')
 
-        return response.json()['test_id']
+        return response.json().get('external_test_id')
 
     def test_finish(self, test_name, file_name, start_time, end_time):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/test/finish'
@@ -108,10 +109,10 @@ class TaukApi:
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
         if response.status_code != 200:
-            logger.error(f'Failed to upload test. Response: {response.text}')
-            raise TaukException('failed to upload test results')
+            logger.error(f'Failed to register test finish. Response: {response.text}')
+            raise TaukException('failed to register test finish')
 
-        return response.json()['test_id']
+        return response.json().get('external_test_id')
 
     def upload(self, test_data):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
@@ -129,3 +130,26 @@ class TaukApi:
             raise TaukException('failed to upload test results')
 
         logger.debug(f'Response: {response.text}')
+        return response.json().get('external_test_id')
+
+    def upload_attachment(self, file_path, attachment_type: AttachmentTypes, test_id):
+        if not test_id:
+            raise TaukException(f'invalid test_id {test_id}')
+
+        url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/attachment/upload/{test_id}'
+
+        headers = {
+            'Authorization': f'Bearer {self._api_token}',
+            'Tauk-Attachment-Type': f'{attachment_type.value}',
+        }
+
+        logger.debug(f'Uploading test attachment: url[{url}], headers[{headers}], file[{file_path}]')
+        with open(file_path, 'rb') as file:
+            response = requests.post(url, data=file, headers=headers)
+            if response.status_code != 200:
+                logger.error(f'Failed to upload attachment. Response: {response.text}')
+                raise TaukException('failed to upload attachment')
+
+            logger.debug(f'Response: {response.text}')
+
+# TODO: Add API to remove browser
