@@ -7,24 +7,24 @@ logger = logging.getLogger('tauk')
 
 
 @unique
-class TestStatus(Enum):
-    FAILED = 'failed'
-    PASSED = 'passed'
-    EXCLUDED = 'excluded'
-
+class TaukEnum(Enum):
     def __getstate__(self):
         return self.value
 
 
 @unique
-class BrowserNames(Enum):
+class TestStatus(TaukEnum):
+    FAILED = 'failed'
+    PASSED = 'passed'
+    EXCLUDED = 'excluded'
+
+
+@unique
+class BrowserNames(TaukEnum):
     CHROME = 'chrome'
     FIREFOX = 'firefox'
     EDGE = 'edge'
     SAFARI = 'safari'
-
-    def __getstate__(self):
-        return self.value
 
     @classmethod
     def resolve(cls, name: str):
@@ -41,26 +41,20 @@ class BrowserNames(Enum):
 
 
 @unique
-class AutomationTypes(Enum):
+class AutomationTypes(TaukEnum):
     APPIUM = 'appium'
     SELENIUM = 'selenium'
     ESPRESSO = 'espresso'
     XCTEST = 'xctest'
 
-    def __getstate__(self):
-        return self.value
-
 
 @unique
-class PlatformNames(Enum):
+class PlatformNames(TaukEnum):
     IOS = 'ios'
     ANDROID = 'android'
     WINDOWS = 'windows'
     LINUX = 'linux'
     MACOS = 'macos'
-
-    def __getstate__(self):
-        return self.value
 
     @classmethod
     def resolve(cls, name: str):
@@ -72,3 +66,29 @@ class PlatformNames(Enum):
             return PlatformNames.LINUX
         else:
             raise TaukException(f'unable to resolve platform name {name}')
+
+
+@unique
+class AttachmentTypes(TaukEnum):
+    COMPANION_CONSOLE_LOGS = 'Runtime.consoleLogs'
+    COMPANION_EXCEPTION_LOGS = 'Runtime.exceptionLogs'
+    COMPANION_BROWSER_LOGS = 'Log.browserLogs'
+
+    @classmethod
+    def resolve_companion_log(cls, name: str):
+        if 'console_logs.json' in name.lower():
+            return AttachmentTypes.COMPANION_CONSOLE_LOGS
+        elif 'exception_logs.json' in name.lower():
+            return AttachmentTypes.COMPANION_EXCEPTION_LOGS
+        elif 'browser_logs.json' in name.lower():
+            return AttachmentTypes.COMPANION_BROWSER_LOGS
+        else:
+            raise TaukException(f'unable to resolve platform name {name}')
+
+    @classmethod
+    def is_companion_attachment(self):
+        if self.name in [AttachmentTypes.COMPANION_EXCEPTION_LOGS, AttachmentTypes.COMPANION_EXCEPTION_LOGS,
+                         AttachmentTypes.COMPANION_BROWSER_LOGS]:
+            return True
+
+        return False
