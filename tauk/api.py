@@ -33,10 +33,6 @@ class TaukApi:
     def get_project_id(self):
         return self._project_id
 
-    def initialize_run_mock(self, test_data, run_id=None):
-        self.run_id = '5d917db6-cf5d-4f30-8303-6eefc35e7558'
-        return self.run_id
-
     def initialize_run(self, test_data: TestData, run_id: str = None):
         url = f'{self._API_URL}/execution/{self._project_id}/initialize'
         body = {

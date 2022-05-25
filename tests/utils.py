@@ -69,7 +69,7 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
                             result(caller_filename, test_method_name, ctx, test_data, test_suite, test_case)
 
                 return result
-            except:
+            except Exception:
                 if validation and callable(validation):
                     ctx = Tauk().get_context()
                     test_data = ctx.test_data
