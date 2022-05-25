@@ -1,15 +1,13 @@
 import logging
 import os.path
 import re
-from contextlib import suppress
-from pathlib import Path
-
 import tzlocal
 import inspect
-
 import traceback
 import typing
 
+from contextlib import suppress
+from pathlib import Path
 from tauk.companion.companion import TaukCompanion
 from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames, AttachmentTypes
@@ -87,8 +85,8 @@ class TestCase(object):
         return self._id
 
     @id.setter
-    def id(self, id):
-        self._id = id
+    def id(self, external_test_id):
+        self._id = external_test_id
 
     @property
     def custom_name(self):
@@ -233,12 +231,6 @@ class TestCase(object):
             def inner():
                 self.capture_screenshot()
                 self.capture_view_hierarchy()
-                # TODO: Remove this?
-                # if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
-                #     try:
-                #         companion.close_page(self.browser_debugger_address)
-                #     except Exception as exc:
-                #         logger.error('Failed to close browser debugger page', exc_info=exc)
                 func()
 
             return inner
@@ -353,7 +345,7 @@ class TestCase(object):
                 if value['line_number'] == error_line_number:
                     # get previous 9 lines plus the line where the error occurred
                     # ensure that the start range value is never below zero
-                    # get the next 9 lines after the error occured
+                    # get the next 9 lines after the error occurred
                     # ensure that the end range value never exceeds the len of the list
                     result = output[max(index - 9, 0): min(index + 10, len(output))]
                     self.code_context = result
@@ -368,7 +360,7 @@ class TestCase(object):
                 # https://bit.ly/3rK88pe
                 ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
-                # Split at first event type occurence
+                # Split at first event type occurrence
                 # in square brackets, e.g. [HTTP]
                 # https://bit.ly/3fItHEi
                 split_log_msg = re.split(r'\[|\]', ansi_escape.sub(
@@ -398,6 +390,7 @@ class TestCase(object):
             logger.error('An issue occurred while requesting the Appium server logs.', exc_info=ex)
 
     def add_attachment(self, file_path, attachment_type: AttachmentTypes):
+        logger.debug(f'Adding attachment {attachment_type}: {file_path}')
         path = Path(file_path)
         if not path.exists() or not path.is_file():
             raise TaukException(f'file not found {path}')
