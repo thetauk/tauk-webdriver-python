@@ -9,11 +9,12 @@ from datetime import datetime, timezone
 from functools import wraps
 from threading import Lock
 
-from tauk.companion.companion import CompanionConfig
+from tauk.config import TaukConfig
 from tauk.context.context import TaukContext
 from tauk.enums import AutomationTypes, AttachmentTypes
-from tauk.exceptions import TaukException, TaukTestMethodNotFound
+from tauk.exceptions import TaukException, TaukTestMethodNotFoundException
 from tauk.context.test_data import TestCase
+from tauk.utils import attach_companion_artifacts, upload_attachments
 
 logger = logging.getLogger('tauk')
 
@@ -24,36 +25,17 @@ class Tauk:
     instance = None
     __context: TaukContext
 
-    # TODO: Add documentation
-    # TODO: Implement Tauk config
-    def __new__(cls, api_token: str = None, project_id: str = None,
-                multi_process_run=False,
-                cleanup_exec_context=True,
-                companion: CompanionConfig = None
-                ):
+    def __new__(cls, tauk_config=TaukConfig()):
+        """Initialize global instance of Tauk"""
         with mutex:
             if Tauk.instance is None:
-                logger.debug(f'Creating new Tauk instance with api_token={api_token}, project_id={project_id}, '
-                             f'multi_process_run={multi_process_run}')
+                logger.debug(f'Creating new Tauk instance with config [{tauk_config}]')
                 cls.instance = super(Tauk, cls).__new__(cls)
-                if not api_token or not project_id:
-                    api_token = os.getenv('TAUK_API_TOKEN')
-                    project_id = os.getenv('TAUK_PROJECT_ID')
-                    multi_process_run = os.getenv('TAUK_MULTI_PROCESS',
-                                                  f'{multi_process_run}').lower().strip() == "true"
-                    logger.info(f'Environment variables contains api_token={api_token}, project_id={project_id},'
-                                f' multi_process_run={multi_process_run}')
 
-                if not multi_process_run and (not api_token or not project_id):
-                    raise TaukException('Valid TAUK_API_TOKEN and TAUK_PROJECT_ID environment variables must be set')
+                Tauk.__context = TaukContext(tauk_config)
 
-                if companion and not isinstance(companion, CompanionConfig):
-                    raise TaukException('Invalid companion config')
-
-                Tauk.__context = TaukContext(api_token, project_id,
-                                             multi_process_run=multi_process_run, companion_config=companion)
-
-                if cleanup_exec_context:
+                # Setup atexit handler to clean execution files
+                if tauk_config.cleanup_exec_context:
                     atexit.register(Tauk.destroy)
 
             return cls.instance
@@ -109,7 +91,7 @@ class Tauk:
             elif ref_frame and frame_info.function == ref_frame:
                 found_ref_frame = True
 
-        raise TaukTestMethodNotFound('failed to find test method details')
+        raise TaukTestMethodNotFoundException('failed to find test method details')
 
     @classmethod
     def destroy(cls):
@@ -121,7 +103,7 @@ class Tauk:
                 logger.error('Failed to delete execution file', exc_info=ex)
 
             try:
-                if Tauk.__context.companion.is_running():
+                if Tauk.__context.companion and Tauk.__context.companion.is_running():
                     Tauk.__context.companion.kill()
             except Exception as ex:
                 logger.error('Failed to kill companion app', exc_info=ex)
@@ -146,37 +128,6 @@ class Tauk:
         if test is None:
             raise TaukException(f'TaukListener was not attached to unittest runner')
         test.register_driver(driver, Tauk.__context.companion, relative_file_name, method_name)
-
-    # TODO: Refactor and remove duplicate code
-    def _upload_attachments(cls, testcase: TestCase):
-        companion = Tauk.get_context().companion
-        if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
-            try:
-                connected_page = companion.get_connected_page(testcase.browser_debugger_address)
-                if connected_page:
-                    companion.close_page(testcase.browser_debugger_address)
-                    attachment_path = os.path.join(Tauk.get_context().exec_dir, 'companion', connected_page.lower())
-                    companion_attachments = next(os.walk(attachment_path), (None, None, []))[2]  # only files
-                    if len(companion_attachments) == 0:
-                        logger.info('Did not find any companion attachments')
-                    for attachment in companion_attachments:
-                        testcase.add_attachment(
-                            os.path.join(attachment_path, attachment),
-                            AttachmentTypes.resolve_companion_log(attachment))
-            except Exception as exc:
-                logger.error('Failed to close browser debugger page', exc_info=exc)
-
-        for _, att in testcase.attachments:
-            try:
-                file_path, attachment_type = att[0], att[1]
-                Tauk.get_context().api.upload_attachment(file_path, attachment_type, testcase.id)
-                # If it's a companion attachment we should delete it after successful upload
-                if attachment_type.is_companion_attachment():
-                    if os.path.exists(file_path):
-                        logger.debug(f'Deleting companion attachment {file_path}')
-                        os.remove(file_path)
-            except Exception as ex:
-                logger.error(f'Failed to upload attachment {att}', exc_info=ex)
 
     @classmethod
     def observe(cls, custom_test_name=None, excluded=False):
@@ -215,7 +166,10 @@ class Tauk:
                     json_test_data = Tauk.__context.get_json_test_data(relative_file_name, test_case.method_name)
                     test_case.id = Tauk.__context.api.upload(json_test_data)
 
-                    Tauk._upload_attachments(test_case)
+                    # Attach companion artifacts
+                    attach_companion_artifacts(Tauk.__context.companion, test_case)
+                    # Upload attachments
+                    upload_attachments(Tauk.__context.api, test_case)
 
                     Tauk.__context.test_data.delete_test_case(relative_file_name, test_case.method_name)
 
@@ -229,16 +183,16 @@ class Tauk:
 
     @classmethod
     def add_user_data(cls, name, value, unittestcase=None, test_file_name=None, test_method_name=None):
+        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
+            logger.info(f'Tauk.add_user_data: Skipping user data for [{unittestcase.id()}]')
+            return
+
         if test_file_name and test_method_name:
             test = Tauk._get_testcase(test_file_name, test_method_name)
             if test is None:
-                raise TaukException(f'user data can only be added withing the test method'
-                                    f' Verify if {test_file_name} has @Tauk.observe decorator')
+                raise TaukException(f'user data can only be added withing the test method,'
+                                    f' verify if {test_file_name} has @Tauk.observe decorator')
             test.add_user_data(name, value)
-            return
-
-        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
-            logger.info(f'Tauk.add_user_data: Skipping user data for [{unittestcase.id()}]')
             return
 
         _, relative_file_name, method_name = Tauk._get_test_method_details(
@@ -249,22 +203,23 @@ class Tauk:
         test.add_user_data(name, value)
 
     @classmethod
-    def add_attachment(cls, attachment, unittestcase=None, test_file_name=None, test_method_name=None):
+    def add_attachment(cls, attachment_file_path, attachment_type: AttachmentTypes,
+                       unittestcase=None, test_file_name=None, test_method_name=None):
+        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
+            logger.info(f'Tauk.add_user_data: Skipping user data for [{unittestcase.id()}]')
+            return
+
         if test_file_name and test_method_name:
             test = Tauk._get_testcase(test_file_name, test_method_name)
             if test is None:
-                raise TaukException(f'user data can only be added withing the test method'
-                                    f' Verify if {test_file_name} has @Tauk.observe decorator')
-            test.add_attachment(attachment)
-            return
-
-        if hasattr(unittestcase, 'tauk_skip') and unittestcase.tauk_skip is True:
-            logger.info(f'Tauk.add_user_data: Skipping user data for [{unittestcase.id()}]')
+                raise TaukException(f'attachment can only be added withing the test method,'
+                                    f' verify if {test_file_name} has @Tauk.observe decorator')
+            test.add_attachment(attachment_file_path, attachment_type)
             return
 
         _, relative_file_name, method_name = Tauk._get_test_method_details(
             unittestcase=unittestcase, ref_frame=Tauk.add_user_data.__name__)
         test = Tauk._get_testcase(relative_file_name, method_name)
         if test is None:
-            raise TaukException(f'user data can only be added within testcase')
-        test.add_attachment(attachment)
+            raise TaukException(f'attachment can only be added within testcase')
+        test.add_attachment(attachment_file_path, attachment_type)

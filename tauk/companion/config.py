@@ -22,6 +22,10 @@ class CompanionConfig:
             'network': {}
         }
 
+    @staticmethod
+    def default():
+        return CompanionConfig()
+
     def capture_console_logs(self, capture: bool, log_level='error', filters=''):
         self.cdp_config['runtime']['consoleLogs']['enabled'] = capture
         self.cdp_config['runtime']['consoleLogs']['level'] = log_level
@@ -49,3 +53,6 @@ class CompanionConfig:
         return self.is_capturing_console_logs() or \
                self.is_capturing_browser_logs() or \
                self.is_capturing_uncaught_exceptions()
+
+    def __str__(self):
+        return f'CompanionConfig: {self.cdp_config}'
