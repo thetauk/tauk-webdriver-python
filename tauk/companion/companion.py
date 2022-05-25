@@ -1,4 +1,3 @@
-import copy
 import logging
 import os
 import subprocess
@@ -6,6 +5,7 @@ import time
 import requests
 
 from tauk.companion.config import CompanionConfig
+from tauk.enums import AttachmentTypes
 from tauk.exceptions import TaukException
 from tauk.utils import get_open_port
 
@@ -20,7 +20,7 @@ class TaukCompanion:
                                           'tauk-companion')
         self._api_token = api_token
         self._execution_dir = execution_dir
-        self._process: subprocess.Popen = None
+        self._process: subprocess.Popen | None = None
         self._companion_port = 8285
         self._version = ''
         self._connections = {}
@@ -54,7 +54,7 @@ class TaukCompanion:
                 if response.status_code == 200:
                     self._version = response.json()['version']
                     return
-            except:
+            except Exception:
                 try:
                     out, err = self._process.communicate(timeout=1)
                     logger.error('[Companion] STDOUT: %s', out)
@@ -87,6 +87,7 @@ class TaukCompanion:
 
         page_id = response.json().get('desc').get('id')
         self._connections[debugger_address] = page_id
+        return page_id
 
     def close_page(self, debugger_address):
         logger.debug(f'[Companion] Closing page connection on {debugger_address}')
@@ -103,4 +104,14 @@ class TaukCompanion:
         return page_id
 
     def get_connected_page(self, debugger_address) -> str:
-        return copy.copy(self._connections.get(debugger_address, None))
+        return self._connections.get(debugger_address, None)
+
+    def get_attachments(self, debugger_address):
+        connected_page = self.get_connected_page(debugger_address)
+        attachment_path = os.path.join(self._execution_dir, 'companion', connected_page)
+        companion_attachments = next(os.walk(attachment_path), (None, None, []))[2]  # only files
+        attachments = []
+        for attachment in companion_attachments:
+            attachments.append(
+                (os.path.join(attachment_path, attachment), AttachmentTypes.resolve_companion_log(attachment)))
+        return attachments
