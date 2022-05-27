@@ -62,7 +62,7 @@ def shortened_json(json_text):
 
 def attach_companion_artifacts(companion, test_case):
     browser_debugger_address = test_case.browser_debugger_address
-    if companion.config.is_cdp_capture_enabled():
+    if companion and companion.config.is_cdp_capture_enabled():
         if companion.is_running():
             connected_page = companion.get_connected_page(browser_debugger_address)
             if connected_page:
@@ -85,6 +85,8 @@ def attach_companion_artifacts(companion, test_case):
 
 
 def upload_attachments(api, test_case):
+    if len(test_case.attachments) == 0:
+        logger.debug('No attachments to upload')
     for file_path, attachment_type in test_case.attachments:
         try:
             api.upload_attachment(file_path, attachment_type, test_case.id)
