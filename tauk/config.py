@@ -17,7 +17,7 @@ class TaukConfig:
 
         self._api_url = os.environ.get('TAUK_API_URL', 'https://www.tauk.com/api/v1')
         self._cleanup_exec_context = True
-        self._companion: CompanionConfig | None = None
+        self._companion_config: CompanionConfig | None = None
 
     def _get_value_from_property_or_env(self, prop, env_var):
         if prop:
@@ -56,13 +56,13 @@ class TaukConfig:
         self._cleanup_exec_context = val
 
     @property
-    def companion(self):
-        return self._companion
+    def companion_config(self):
+        return self._companion_config
 
-    @companion.setter
-    def companion(self, val: CompanionConfig):
+    @companion_config.setter
+    def companion_config(self, val: CompanionConfig):
         self._validate_type(val, CompanionConfig)
-        self._companion = CompanionConfig
+        self._companion_config = val
 
     @staticmethod
     def _validate_type(val, expected_type):
@@ -70,9 +70,9 @@ class TaukConfig:
             raise TaukInvalidTypeException(f'property type must be {expected_type}')
 
     def is_companion_enabled(self):
-        return self.companion is not None
+        return self.companion_config is not None
 
     def __str__(self):
         return f'TaukConfig: APIToken={self.api_token}, ProjectID={self.project_id}, API_URL={self.api_url}, ' \
                f'MultiprocessRun={self.multiprocess_run}, CleanupExecContext={self.cleanup_exec_context}, ' \
-               f'Companion: {self.companion}'
+               f'Companion: {self.companion_config}'
