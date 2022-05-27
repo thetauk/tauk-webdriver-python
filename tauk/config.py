@@ -5,35 +5,30 @@ from tauk.exceptions import TaukInvalidTypeException, TaukException
 
 
 class TaukConfig:
-    def __init__(self, api_token=None, project_id=None) -> None:
-        self._multiprocess_run = self._get_run_type()
-        self._fetch_api_token(api_token)
-        self._fetch_project_id(project_id)
+    def __init__(self, api_token=None, project_id=None, multiprocess_run=None) -> None:
+        # Default value for multiprocess_run should be false, however we have set it to None in the argument
+        # because if no value is passed we should try reading from the environment variable
+        if multiprocess_run is None:
+            self._multiprocess_run = os.getenv('TAUK_MULTI_PROCESS', '').lower() == 'true'
+        else:
+            self._multiprocess_run = multiprocess_run if isinstance(multiprocess_run, bool) else False
+        self._api_token = self._get_value_from_property_or_env(api_token, 'TAUK_API_TOKEN')
+        self._project_id = self._get_value_from_property_or_env(project_id, 'TAUK_PROJECT_ID')
 
         self._api_url = os.environ.get('TAUK_API_URL', 'https://www.tauk.com/api/v1')
         self._cleanup_exec_context = True
         self._companion: CompanionConfig | None = None
 
-    def _fetch_api_token(self, api_token):
-        env_var = 'TAUK_API_TOKEN'
-        if api_token:
-            self._api_token = api_token
+    def _get_value_from_property_or_env(self, prop, env_var):
+        if prop:
+            return prop
         elif os.getenv(env_var):
-            self._api_token = os.getenv(env_var)
-        elif not self.multiprocess_run:
-            raise TaukException(f'could not find a valid API token in environment variable ${env_var}')
+            return os.getenv(env_var)
+        elif self.multiprocess_run:
+            # Multiprocess runs don't need API Token/ Project ID because it could be read from the exec file
+            return None
 
-    def _fetch_project_id(self, project_id):
-        env_var = 'TAUK_PROJECT_ID'
-        if project_id:
-            self._project_id = project_id
-        elif os.getenv(env_var):
-            self._project_id = os.getenv(env_var)
-        elif not self.multiprocess_run:
-            raise TaukException(f'could not find a valid Project ID in environment variable ${env_var}')
-
-    def _get_run_type(self):
-        return (os.getenv('TAUK_MULTI_PROCESS').lower() == 'true') if os.getenv('TAUK_MULTI_PROCESS') else False
+        raise TaukException(f'could not find a valid environment variable ${env_var}')
 
     @property
     def api_token(self):
@@ -50,11 +45,6 @@ class TaukConfig:
     @property
     def multiprocess_run(self):
         return self._multiprocess_run
-
-    @multiprocess_run.setter
-    def multiprocess_run(self, val: bool):
-        self._validate_type(val, bool)
-        self._multiprocess_run = val
 
     @property
     def cleanup_exec_context(self):
