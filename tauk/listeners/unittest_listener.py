@@ -32,7 +32,7 @@ class TaukListener(unittest.TestResult):
         # Check if Tauk is initialized because any class subclassing this listener
         # should have the ability to customize Tauk Config
         if not Tauk.is_initialized():
-            Tauk(TaukConfig())git
+            Tauk(TaukConfig())
 
         super().startTestRun()
 
