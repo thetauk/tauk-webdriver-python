@@ -25,7 +25,7 @@ class TaukContext:
         # Initialize Tauk Companion
         self.companion: TaukCompanion | None = None
         if tauk_config.is_companion_enabled():
-            self.companion = TaukCompanion(tauk_config.api_token, self.exec_dir, tauk_config.companion)
+            self.companion = TaukCompanion(tauk_config.api_token, self.exec_dir, tauk_config.companion_config)
             try:
                 self.companion.launch()
             except Exception as ex:
@@ -80,8 +80,7 @@ class TaukContext:
             os.remove(self._exec_file)
         if os.path.exists(lock_file):
             os.remove(lock_file)
-        # os.rmdir(self.exec_dir)
-        # TODO: Find a safe way to delete the directory
+        os.rmdir(self.exec_dir)
 
     def _setup_execution_file(self):
         def set_exec_file(r_id, a_token, p_id):
