@@ -21,7 +21,6 @@ def _should_observe(test):
 
 class TaukListener(unittest.TestResult):
     def __init__(self, stream, descriptions, verbosity):
-        self.tauk_config = TaukConfig()
         self.tests: Dict[str, TestCase] = {}
         self.test_filename = None
         super().__init__(stream, descriptions, verbosity)
@@ -29,7 +28,12 @@ class TaukListener(unittest.TestResult):
     def startTestRun(self) -> None:
         logger.info("# Test Run Started ---")
         self.tests: Dict[str, TestCase] = {}
-        Tauk(self.tauk_config) if not Tauk.is_initialized() else None
+
+        # Check if Tauk is initialized because any class subclassing this listener
+        # should have the ability to customize Tauk Config
+        if not Tauk.is_initialized():
+            Tauk(TaukConfig())git
+
         super().startTestRun()
 
     def stopTestRun(self) -> None:
@@ -83,7 +87,7 @@ class TaukListener(unittest.TestResult):
             upload_attachments(ctx.api, test_case)
 
         except Exception as ex:
-            logger.error('Failed to upload test results', exc_info=ex)
+            logger.error('Failed to update test results', exc_info=ex)
 
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
         super().addError(test, err)
