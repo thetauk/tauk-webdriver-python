@@ -25,10 +25,13 @@ class Tauk:
     instance = None
     __context: TaukContext
 
-    def __new__(cls, tauk_config=TaukConfig()):
+    def __new__(cls, tauk_config=None):
         """Initialize global instance of Tauk"""
         with mutex:
             if Tauk.instance is None:
+                if tauk_config is None:
+                    tauk_config = TaukConfig()
+                cls.config = tauk_config
                 logger.debug(f'Creating new Tauk instance with config [{tauk_config}]')
                 cls.instance = super(Tauk, cls).__new__(cls)
 
@@ -110,7 +113,6 @@ class Tauk:
 
             del cls.instance
 
-    # TODO: Move identifier to common method
     @classmethod
     def register_driver(cls, driver, unittestcase=None):
         # Skip registering driver if there is a local variable called tauk_skip
@@ -131,7 +133,6 @@ class Tauk:
 
     @classmethod
     def observe(cls, custom_test_name=None, excluded=False):
-
         def inner_decorator(func):
             logger.debug(f'Registering test method=[{func.__name__}]'
                          f' with custom_test_name=[{custom_test_name}], excluded=[{excluded}]')
