@@ -1,9 +1,9 @@
 import logging
 import re
 import subprocess
-
 import responses
 
+from tauk.config import TaukConfig
 from tauk.tauk_webdriver import Tauk
 
 logger = logging.getLogger('tauk')
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     try:
         logger.info('Initializing main tauk instance')
-        Tauk(api_token='api-token', project_id='project-id', multi_process_run=True)
+        Tauk(TaukConfig('api-token', 'project-id', multiprocess_run=True))
 
         p1 = subprocess.Popen(['python', 'tests/e2e/listeners/multiprocess/launcher.py',
                                '--test-name=test_one', '--class-name=UnitTestListenerTestOne']

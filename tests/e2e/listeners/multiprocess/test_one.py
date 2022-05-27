@@ -1,4 +1,3 @@
-import time
 import unittest
 
 from selenium import webdriver
@@ -19,7 +18,7 @@ class UnitTestListenerTestOne(unittest.TestCase):
     def test_one(self):
         print('running test one')
         options = Options()
-        # options.headless = True
+        options.headless = True
 
         self.driver = webdriver.Chrome(options=options)
         Tauk.register_driver(self.driver)

@@ -14,7 +14,7 @@ from tauk.context.test_data import TestData
 from tauk.context.test_suite import TestSuite
 from tauk.enums import TestStatus, AutomationTypes, PlatformNames, BrowserNames
 from tauk.tauk_webdriver import Tauk
-from tests.utils import mock, mock_success
+from tests.utils import mock_success
 
 
 class TestDataTest(unittest.TestCase):
@@ -100,11 +100,11 @@ class TestDataTest(unittest.TestCase):
         t.assertEqual(tc['webdriver_client_version'], selenium.__version__, 'Invalid webdriver client version')
         t.assertEqual(tc['browser_driver_version'], TestDataTest.driver.capabilities['chrome']['chromedriverVersion'],
                       'Invalid chrome driver version')
-        t.assertDictEqual(tc['capabilities'], TestDataTest.driver.capabilities, 'Capabilitites does not match')
+        t.assertDictEqual(tc['capabilities'], TestDataTest.driver.capabilities, 'Capabilities does not match')
         t.assertIsInstance(tc['code_context'], typing.List, 'code_context must be of list type')
         t.assertTrue(len(tc['code_context']) > 0, 'code_context should not be a empty list')
         t.assertCountEqual(tc['error'].keys(),
-                           ['error_type', 'error_msg', 'line_number', 'invoked_func', 'code_executed'])
+                           ['error_type', 'error_msg', 'line_number', 'invoked_func', 'code_executed', 'traceback'])
         t.assertEqual(tc['error']['error_type'], 'NoSuchElementException')
         t.assertTrue(len(tc['error']['error_msg']) > 0)
         t.assertTrue(tc['error']['line_number'] > 0)

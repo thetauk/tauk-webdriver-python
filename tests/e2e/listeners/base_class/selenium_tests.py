@@ -68,7 +68,7 @@ class TestDataTest(BaseTestCase):
         t = unittest.TestCase()
         t.assertEqual(tc['method_name'], 'test_2_failure_test_case_data', 'Invalid method name')
         t.assertEqual(tc['status'], TestStatus.FAILED.value, 'Invalid test status')
-        t.assertEqual(tc['aucatomation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
+        t.assertEqual(tc['automation_type'], AutomationTypes.SELENIUM.value, f'Invalid automation type')
         t.assertEqual(tc['platform_name'], PlatformNames.MACOS.value, 'Invalid platform name')
         t.assertEqual(tc['browser_name'], BrowserNames.CHROME.value, 'Invalid browser name')
         t.assertTrue(len(tc['browser_version']) > 0, f'Invalid browser version {tc["browser_version"]}')
@@ -82,7 +82,7 @@ class TestDataTest(BaseTestCase):
         t.assertEqual(tc['webdriver_client_version'], selenium.__version__, 'Invalid webdriver client version')
         t.assertEqual(tc['browser_driver_version'], TestDataTest.driver.capabilities['chrome']['chromedriverVersion'],
                       'Invalid chrome driver version')
-        t.assertDictEqual(tc['capabilities'], TestDataTest.driver.capabilities, 'Capabilitites does not match')
+        t.assertDictEqual(tc['capabilities'], TestDataTest.driver.capabilities, 'Capabilities does not match')
         t.assertIsInstance(tc['code_context'], typing.List, 'code_context must be of list type')
         t.assertTrue(len(tc['code_context']) > 0, 'code_context should not be a empty list')
         t.assertCountEqual(tc['error'].keys(),
