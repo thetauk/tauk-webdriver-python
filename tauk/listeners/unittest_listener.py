@@ -80,7 +80,7 @@ class TaukListener(unittest.TestResult):
             return
 
         logger.info(f'# Test Errored [{test.id()}] ---')
-        self.tests[test.id()].status = TestStatus.FAILED
+        self.tests[test.id()].capture_failure_data()
 
         exctype, value, tb = err
         traceback.print_exception(exctype, value, tb)
@@ -93,7 +93,7 @@ class TaukListener(unittest.TestResult):
             return
 
         logger.info(f'# Test Failed [{test.id()}] ---')
-        self.tests[test.id()].status = TestStatus.FAILED
+        self.tests[test.id()].capture_failure_data()
 
         exctype, value, tb = err
         traceback.print_exception(exctype, value, tb)
@@ -106,7 +106,7 @@ class TaukListener(unittest.TestResult):
             return
 
         logger.info(f'# Test Passed [{test.id()}] ---')
-        self.tests[test.id()].status = TestStatus.PASSED
+        self.tests[test.id()].capture_success_data()
 
     def addSkip(self, test: unittest.case.TestCase, reason: str) -> None:
         super().addSkip(test, reason)
