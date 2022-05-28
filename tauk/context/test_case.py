@@ -276,7 +276,7 @@ class TestCase(object):
                 filename, line_number, invoked_func, code_executed = stack_trace
                 break
 
-        traceback_str = '\n'.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        traceback_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
 
         self.error = {
             'error_type': exc_value.__class__.__name__,
