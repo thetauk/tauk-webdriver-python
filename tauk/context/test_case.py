@@ -307,7 +307,7 @@ class TestCase(object):
             'line_number': line_number,
             'invoked_func': invoked_func,
             'code_executed': code_executed,
-            'traceback': traceback.format_exc()
+            'traceback': traceback.format_exception(exec_info)
         }
         return line_number
 
