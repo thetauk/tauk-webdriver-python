@@ -10,6 +10,7 @@ from functools import wraps
 from threading import Lock
 
 from tauk.context.context import TaukContext
+from tauk.enums import AutomationTypes
 from tauk.exceptions import TaukException
 from tauk.context.test_data import TestCase
 
@@ -166,7 +167,8 @@ class Tauk:
                 else:
                     return result
                 finally:
-                    test_case.capture_appium_logs()
+                    if test_case.automation_type == AutomationTypes.APPIUM:
+                        test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
                     json_test_data = Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name)
                     Tauk.__context.api.upload(json_test_data)
