@@ -51,12 +51,13 @@ class TaukListener(unittest.TestResult):
         self.test_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
         test_method_name = test.id().split('.')[-1]
 
-        self.tests[test.id()] = TestCase()
-        self.tests[test.id()].method_name = test_method_name
-        self.tests[test.id()].start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-        self.tests[test.id()].custom_name = test.shortDescription()
+        test_case = TestCase()
+        test_case.method_name = test_method_name
+        test_case.start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+        test_case.custom_name = test.shortDescription()
 
-        Tauk.get_context().test_data.add_test_case(self.test_filename, self.tests[test.id()])
+        Tauk.get_context().test_data.add_test_case(self.test_filename, test_case)
+        self.tests[test.id()] = test_case
 
         super().startTest(test)
 
@@ -70,6 +71,7 @@ class TaukListener(unittest.TestResult):
         try:
             test_case = self.tests[test.id()]
             test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+
             if test_case.automation_type is AutomationTypes.APPIUM:
                 test_case.capture_appium_logs()
 
@@ -93,15 +95,13 @@ class TaukListener(unittest.TestResult):
         super().addError(test, err)
         if _should_observe(test):
             logger.debug(f'addError: Skipping Tauk observe for the test [{test.id()}] ---')
-
             return
 
         logger.info(f'# Test Errored [{test.id()}] ---')
-        self.tests[test.id()].capture_failure_data()
-
-        exctype, value, tb = err
-        traceback.print_exception(exctype, value, tb)
-        self.tests[test.id()].capture_error(self.test_filename, err)
+        test_case = self.tests[test.id()]
+        traceback.print_exception(*err)
+        test_func = getattr(test, test_case.method_name)
+        test_case.capture_failure_data(self.test_filename, err, test_func)
 
     def addFailure(self, test: unittest.case.TestCase, err: tuple) -> None:
         super().addFailure(test, err)
@@ -110,11 +110,10 @@ class TaukListener(unittest.TestResult):
             return
 
         logger.info(f'# Test Failed [{test.id()}] ---')
-        self.tests[test.id()].capture_failure_data()
-
-        exctype, value, tb = err
-        traceback.print_exception(exctype, value, tb)
-        self.tests[test.id()].capture_error(self.test_filename, err)
+        test_case = self.tests[test.id()]
+        traceback.print_exception(*err)
+        test_func = getattr(test, test_case.method_name)
+        test_case.capture_failure_data(self.test_filename, err, test_func)
 
     def addSuccess(self, test: unittest.case.TestCase) -> None:
         super().addSuccess(test)
