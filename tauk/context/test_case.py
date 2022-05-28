@@ -276,13 +276,15 @@ class TestCase(object):
                 filename, line_number, invoked_func, code_executed = stack_trace
                 break
 
+        traceback_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+
         self.error = {
             'error_type': exc_value.__class__.__name__,
             'error_msg': str(exc_value),
             'line_number': line_number,
             'invoked_func': invoked_func,
             'code_executed': code_executed,
-            'traceback': traceback.format_exc()
+            'traceback': traceback_str
         }
         return line_number
 
@@ -291,10 +293,13 @@ class TestCase(object):
         self.capture_screenshot()
         self.capture_view_hierarchy()
 
-    def capture_failure_data(self):
+    def capture_failure_data(self, test_filename, err, test_func):
         self.status = TestStatus.FAILED
         self.capture_screenshot()
         self.capture_view_hierarchy()
+
+        error_line_number = self.capture_error(test_filename, err)
+        self.capture_test_steps(testcase=test_func, error_line_number=error_line_number)
 
     def capture_test_steps(self, testcase, error_line_number=0):
         testcase_source_raw = inspect.getsourcelines(testcase)
@@ -350,9 +355,6 @@ class TestCase(object):
 
                 output.append(formatted_event)
             return output
-
-        if self.automation_type != AutomationTypes.APPIUM:
-            return
 
         # Get last 50 log entries
         # minus the 5 log entries for issuing get_log()

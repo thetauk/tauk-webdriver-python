@@ -10,6 +10,7 @@ from functools import wraps
 from threading import Lock
 
 from tauk.context.context import TaukContext
+from tauk.enums import AutomationTypes
 from tauk.exceptions import TaukException
 from tauk.context.test_data import TestCase
 
@@ -161,16 +162,13 @@ class Tauk:
                     test_case.capture_success_data()
                 except:
                     test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-                    test_case.capture_failure_data()
-                    error_line_number = test_case.capture_error(caller_filename, sys.exc_info())
-                    test_case.capture_test_steps(testcase=func, error_line_number=error_line_number)
-
-                    # TODO: cleanup stack track here
+                    test_case.capture_failure_data(caller_filename, sys.exc_info(), func)
                     raise
                 else:
                     return result
                 finally:
-                    test_case.capture_appium_logs()
+                    if test_case.automation_type == AutomationTypes.APPIUM:
+                        test_case.capture_appium_logs()
                     # TODO: Investigate about overloaded test name
                     json_test_data = Tauk.__context.get_json_test_data(caller_relative_filename, test_case.method_name)
                     Tauk.__context.api.upload(json_test_data)
