@@ -7,6 +7,7 @@ import requests
 
 import tauk
 from tauk.context.test_data import TestData
+from tauk.enums import AttachmentTypes
 from tauk.exceptions import TaukException
 from tauk.utils import shortened_json
 
@@ -32,10 +33,6 @@ class TaukApi:
     def get_project_id(self):
         return self._project_id
 
-    def initialize_run_mock(self, test_data, run_id=None):
-        self.run_id = '5d917db6-cf5d-4f30-8303-6eefc35e7558'
-        return self.run_id
-
     def initialize_run(self, test_data: TestData, run_id: str = None):
         url = f'{self._API_URL}/execution/{self._project_id}/initialize'
         body = {
@@ -58,8 +55,8 @@ class TaukApi:
 
         logger.debug(f'Initializing run with: url[{url}], headers[{headers}], body[{body}]')
         response = requests.post(url, json=body, headers=headers)
-        if response.status_code != 200:
-            logger.error(f'Failed to initialize Tauk execution. Response: {response.text}')
+        if not response.ok:
+            logger.error(f'Failed to initialize Tauk execution. Response[{response.status_code}]: {response.text}')
             raise TaukException('failed to initialize tauk execution')
 
         logger.debug(f'Response: {response.text}')
@@ -86,11 +83,11 @@ class TaukApi:
 
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
-        if response.status_code != 200:
-            logger.error(f'Failed to upload test. Response: {response.text}')
-            raise TaukException('failed to upload test results')
+        if not response.ok:
+            logger.error(f'Failed to register test start. Response[{response.status_code}]: {response.text}')
+            raise TaukException('failed to register test start')
 
-        return response.json()['test_id']
+        return response.json().get('external_test_id')
 
     def test_finish(self, test_name, file_name, start_time, end_time):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/test/finish'
@@ -107,11 +104,11 @@ class TaukApi:
 
         response = requests.post(url, json=body, headers=headers)
         logger.info(f'Response: {response.json()}')
-        if response.status_code != 200:
-            logger.error(f'Failed to upload test. Response: {response.text}')
-            raise TaukException('failed to upload test results')
+        if not response.ok:
+            logger.error(f'Failed to register test finish. Response[{response.status_code}]: {response.text}')
+            raise TaukException('failed to register test finish')
 
-        return response.json()['test_id']
+        return response.json().get('external_test_id')
 
     def upload(self, test_data):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
@@ -124,8 +121,31 @@ class TaukApi:
 
         logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{shortened_json(body)}]')
         response = requests.post(url, data=body, headers=headers)
-        if response.status_code != 200:
-            logger.error(f'Failed to upload test. Response: {response.text}')
+        if not response.ok:
+            logger.error(f'Failed to upload test. Response[{response.status_code}]: {response.text}')
             raise TaukException('failed to upload test results')
 
         logger.debug(f'Response: {response.text}')
+        return response.json().get('result')
+
+    def upload_attachment(self, file_path, attachment_type: AttachmentTypes, test_id):
+        if not test_id:
+            raise TaukException(f'invalid test_id {test_id}')
+
+        url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/attachment/upload/{test_id}'
+
+        headers = {
+            'Authorization': f'Bearer {self._api_token}',
+            'Tauk-Attachment-Type': f'{attachment_type.value}',
+        }
+
+        logger.debug(f'Uploading test attachment: url[{url}], headers[{headers}], file[{file_path}]')
+        with open(file_path, 'rb') as file:
+            response = requests.post(url, data=file, headers=headers)
+            if not response.ok:
+                logger.error(f'Failed to upload attachment. Response[{response.status_code}]: {response.text}')
+                raise TaukException('failed to upload attachment')
+
+            logger.debug(f'Response: {response.text}')
+
+# TODO: Add API to remove browser

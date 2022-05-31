@@ -59,7 +59,6 @@ class TestSuite:
         # TODO: Implement thread safe delete
         pass
 
-
     def get_test_case(self, test_name) -> TestCase:
         for test in self.test_cases:
             if test.custom_name == test_name or test.method_name == test_name:

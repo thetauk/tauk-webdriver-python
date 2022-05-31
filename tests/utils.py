@@ -7,6 +7,7 @@ from functools import wraps
 
 import responses
 
+from tauk.config import TaukConfig
 from tauk.exceptions import TaukException
 from tauk.tauk_webdriver import Tauk
 
@@ -42,9 +43,7 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
     register_mock_urls(urls, json_responses, statuses)
 
     if init_tauk and not Tauk.is_initialized():
-        api_token = os.getenv('TAUK_API_TOKEN', 'api-token')
-        project_id = os.getenv('TAUK_PROJECT_ID', 'project-id')
-        Tauk(api_token=api_token, project_id=project_id, multi_process_run=multiprocess)
+        Tauk(TaukConfig('api-token', 'project-id', multiprocess))
 
     def inner_decorator(func):
         caller_filename = None
@@ -69,7 +68,7 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
                             result(caller_filename, test_method_name, ctx, test_data, test_suite, test_case)
 
                 return result
-            except:
+            except Exception:
                 if validation and callable(validation):
                     ctx = Tauk().get_context()
                     test_data = ctx.test_data
@@ -91,13 +90,27 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
 
 def mock_success(expected_run_id='6d917db6-cf5d-4f30-8303-6eefc35e7558', validation=None,
                  multiprocess=False, init_tauk=False):
+    file_name = ''
+    method_name = ''
+    for i, frame_info in enumerate(inspect.stack()):
+        if f'{mock_success.__name__}' in frame_info.frame.f_code.co_names:
+            file_name = os.path.relpath(frame_info.filename, os.getcwd())
+            method_name = frame_info.frame.f_code.co_names[-1]
+
     return mock(
         urls=[re.compile(r'https://www.tauk.com/api/v1/execution/.+/initialize'),
               re.compile(r'https://www.tauk.com/api/v1/execution/.+/.+/report/upload')],
         json_responses=[{'run_id': expected_run_id, 'message': 'success'},
-                        {'message': 'success'}],
+                        {
+                            'message': 'success',
+                            'result': {
+                                file_name: {
+                                    method_name: 'test-id'
+                                }
+                            }
+                        }],
         statuses=[200, 200],
         validation=validation,
         multiprocess=multiprocess,
-        init_tauk=init_tauk
+        init_tauk=init_tauk,
     )

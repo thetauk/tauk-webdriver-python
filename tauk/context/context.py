@@ -5,6 +5,8 @@ import uuid
 import jsonpickle
 
 from tauk.api import TaukApi
+from tauk.companion.companion import TaukCompanion
+from tauk.config import TaukConfig
 from tauk.context.test_data import TestData
 from tauk.exceptions import TaukException
 from filelock import FileLock
@@ -14,23 +16,36 @@ logger = logging.getLogger('tauk')
 
 class TaukContext:
 
-    def __init__(self, api_token, project_id, multi_process_run=False):
+    def __init__(self, tauk_config: TaukConfig):
         self.test_data: TestData = TestData()
-        self.exec_dir = self._get_exec_dir(multi_process_run)
-        self.exec_file = os.path.join(self.exec_dir, 'exec.run')
-        self.api = TaukApi(api_token, project_id, multi_process_run)
+        self._setup_exec_dir(tauk_config.multiprocess_run)
+        self._exec_file = os.path.join(self.exec_dir, 'exec.run')
+        self.api = TaukApi(tauk_config.api_token, tauk_config.project_id, tauk_config.multiprocess_run)
 
-        if multi_process_run:
+        # Initialize Tauk Companion
+        self.companion: TaukCompanion | None = None
+        if tauk_config.is_companion_enabled():
+            self.companion = TaukCompanion(tauk_config.api_token, self.exec_dir, tauk_config.companion_config)
+            try:
+                self.companion.launch()
+            except Exception as ex:
+                logger.error('Failed to launch tauk companion', exc_info=ex)
+
+        if tauk_config.multiprocess_run:
             self._setup_execution_file()
             return
-        else:
-            logger.debug('Deleting execution context because its not a multiprocess run')
-            self.delete_execution_files()
 
+        logger.debug('Deleting execution context because its not a multiprocess run')
+        self.delete_execution_files()
         self.run_id = self._init_run()
 
+    def _setup_exec_dir(self, multiprocess_run):
+        self.exec_dir = self._get_exec_dir(multiprocess_run)
+        if not os.path.exists(self.exec_dir):
+            os.makedirs(self.exec_dir)
+
     def _get_exec_dir(self, multi_process_run=False):
-        if 'TAUK_EXEC_DIR' in os.environ and len(os.environ.get('TAUK_EXEC_DIR')) > 0:
+        if os.environ.get('TAUK_EXEC_DIR'):
             logger.debug(f'Using execution dir found in environment variable {os.environ.get("TAUK_EXEC_DIR")}')
             return os.environ.get('TAUK_EXEC_DIR')
 
@@ -43,7 +58,7 @@ class TaukContext:
 
         parent_exec_dir = os.path.join(exec_home, f'{os.getppid()}')
         if os.path.exists(parent_exec_dir):
-            logger.debug(f'Found exits execution dir at {parent_exec_dir}')
+            logger.debug(f'Found exiting execution dir at {parent_exec_dir}')
             return parent_exec_dir
 
         new_exec_dir = os.path.join(exec_home, f'{os.getpid()}')
@@ -53,7 +68,6 @@ class TaukContext:
         return new_exec_dir
 
     def _init_run(self, run_id=None):
-        # return self.api.initialize_run_mock(self.test_data, run_id)
         return self.api.initialize_run(self.test_data, run_id)
 
     def delete_execution_files(self):
@@ -61,16 +75,16 @@ class TaukContext:
             return
 
         logger.debug(f'Deleting execution files in {self.exec_dir}')
-        lock_file = f'{self.exec_file}.lock'
-        if os.path.exists(self.exec_file):
-            os.remove(self.exec_file)
+        lock_file = f'{self._exec_file}.lock'
+        if os.path.exists(self._exec_file):
+            os.remove(self._exec_file)
         if os.path.exists(lock_file):
             os.remove(lock_file)
         os.rmdir(self.exec_dir)
 
     def _setup_execution_file(self):
         def set_exec_file(r_id, a_token, p_id):
-            with open(self.exec_file, "w") as f:
+            with open(self._exec_file, "w") as f:
                 logger.debug(f'Updating execution file with {r_id}')
                 f.write(f'{r_id},{a_token},{p_id}')
                 self.run_id = r_id
@@ -82,13 +96,10 @@ class TaukContext:
             except ValueError:
                 return False
 
-        if not os.path.exists(self.exec_dir):
-            os.makedirs(self.exec_dir)
-
-        with FileLock(f'{self.exec_file}.lock', timeout=30):
-            logger.debug(f'Execution locked for {self.exec_file}')
-            if os.path.exists(self.exec_file):
-                with open(self.exec_file, 'r') as file:
+        with FileLock(f'{self._exec_file}.lock', timeout=30):
+            logger.debug(f'Execution locked for {self._exec_file}')
+            if os.path.exists(self._exec_file):
+                with open(self._exec_file, 'r') as file:
                     run_id, api_token, project_id = file.read().strip().split(',')
                     self.api.set_token(api_token, project_id)
                     if is_valid_uuid(run_id):
@@ -101,7 +112,7 @@ class TaukContext:
                         logger.warning(f'Invalid runID [{run_id}]')
 
             set_exec_file(self._init_run(), self.api.get_api_token(), self.api.get_project_id())
-            logger.debug(f'Execution unlocked for {self.exec_file}')
+            logger.debug(f'Execution unlocked for {self._exec_file}')
 
     def get_json_test_data(self, test_suite_filename, test_method_name):
         suite = self.test_data.get_test_suite(test_suite_filename)

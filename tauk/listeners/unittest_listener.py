@@ -3,31 +3,37 @@ import logging
 import os
 import traceback
 import unittest
+
 from datetime import datetime, timezone
 from typing import Dict
-
+from tauk.config import TaukConfig
 from tauk.context.test_case import TestCase
 from tauk.enums import TestStatus, AutomationTypes
 from tauk.tauk_webdriver import Tauk
+from tauk.utils import attach_companion_artifacts, upload_attachments
 
 logger = logging.getLogger('tauk')
 
 
-class TaukListener(unittest.TestResult):
-    multiprocess_run = False
+def _should_observe(test):
+    return hasattr(test, 'tauk_skip') and test.tauk_skip is True
 
+
+class TaukListener(unittest.TestResult):
     def __init__(self, stream, descriptions, verbosity):
-        self.tests = None
+        self.tests: Dict[str, TestCase] = {}
         self.test_filename = None
         super().__init__(stream, descriptions, verbosity)
-
-    def _should_observe(self, test):
-        return hasattr(test, 'tauk_skip') and test.tauk_skip is True
 
     def startTestRun(self) -> None:
         logger.info("# Test Run Started ---")
         self.tests: Dict[str, TestCase] = {}
-        Tauk(multi_process_run=self.multiprocess_run) if not Tauk.is_initialized() else None
+
+        # Check if Tauk is initialized because any class subclassing this listener
+        # should have the ability to customize Tauk Config
+        if not Tauk.is_initialized():
+            Tauk(TaukConfig())
+
         super().startTestRun()
 
     def stopTestRun(self) -> None:
@@ -35,7 +41,7 @@ class TaukListener(unittest.TestResult):
         super().stopTestRun()
 
     def startTest(self, test: unittest.case.TestCase) -> None:
-        if self._should_observe(test):
+        if _should_observe(test):
             logger.info(f'startTest: Skipping Tauk observe for the test [{test.id()}] ---')
             super().startTest(test)
             return
@@ -57,7 +63,7 @@ class TaukListener(unittest.TestResult):
 
     def stopTest(self, test: unittest.case.TestCase) -> None:
         super().stopTest(test)
-        if self._should_observe(test):
+        if _should_observe(test):
             logger.debug(f'stopTest: Skipping Tauk observe for the test [{test.id()}] ---')
             return
 
@@ -66,20 +72,28 @@ class TaukListener(unittest.TestResult):
             test_case = self.tests[test.id()]
             test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
 
-            if test_case.automation_type == AutomationTypes.APPIUM:
+            if test_case.automation_type is AutomationTypes.APPIUM:
                 test_case.capture_appium_logs()
 
             ctx = Tauk.get_context()
 
             caller_filename = inspect.getfile(test.__class__)
-            caller_relative_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
-            ctx.api.upload(ctx.get_json_test_data(caller_relative_filename, self.tests[test.id()].method_name))
+            caller_rel_filename = os.path.relpath(caller_filename, os.getcwd())
+            upload_result = ctx.api.upload(
+                ctx.get_json_test_data(caller_rel_filename, test_case.method_name))
+            test_case.id = upload_result.get(caller_rel_filename).get(test_case.method_name)
+
+            # Attach companion artifacts
+            attach_companion_artifacts(ctx.companion, test_case)
+            # Upload attachments
+            upload_attachments(ctx.api, test_case)
+
         except Exception as ex:
-            logger.error('Failed to upload test results', exc_info=ex)
+            logger.error('Failed to update test results', exc_info=ex)
 
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
         super().addError(test, err)
-        if self._should_observe(test):
+        if _should_observe(test):
             logger.debug(f'addError: Skipping Tauk observe for the test [{test.id()}] ---')
             return
 
@@ -91,7 +105,7 @@ class TaukListener(unittest.TestResult):
 
     def addFailure(self, test: unittest.case.TestCase, err: tuple) -> None:
         super().addFailure(test, err)
-        if self._should_observe(test):
+        if _should_observe(test):
             logger.debug(f'addFailure: Skipping Tauk observe for the test [{test.id()}] ---')
             return
 
@@ -103,7 +117,7 @@ class TaukListener(unittest.TestResult):
 
     def addSuccess(self, test: unittest.case.TestCase) -> None:
         super().addSuccess(test)
-        if self._should_observe(test):
+        if _should_observe(test):
             logger.debug(f'addSuccess: Skipping Tauk observe for the test [{test.id()}] ---')
             return
 
@@ -112,7 +126,7 @@ class TaukListener(unittest.TestResult):
 
     def addSkip(self, test: unittest.case.TestCase, reason: str) -> None:
         super().addSkip(test, reason)
-        if self._should_observe(test):
+        if _should_observe(test):
             logger.debug(f'addSkip: Skipping Tauk observe for the test [{test.id()}] ---')
             return
 
