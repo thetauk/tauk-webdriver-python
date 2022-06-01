@@ -64,7 +64,7 @@ def attach_companion_artifacts(companion, test_case):
     browser_debugger_address = test_case.browser_debugger_address
     if companion and companion.config.is_cdp_capture_enabled():
         if companion.is_running():
-            connected_page = companion.get_connected_page(browser_debugger_address)
+            connected_page = test_case.browser_debugger_page_id
             if connected_page:
                 # Try and close browser connection
                 # If the browser already quit then close_page with throw an error
@@ -78,8 +78,8 @@ def attach_companion_artifacts(companion, test_case):
             try:
                 test_case.add_attachment(attachment_file, attachment_type)
             except Exception as ex:
-                logger.debug('[Companion] Failed to add companion attachment', exc_info=ex)
-
+                logger.error(f'[Companion] Failed to add companion attachment [{attachment_type}: {attachment_file}]',
+                             exc_info=ex)
     else:
         logger.debug('[Companion] Capture is disabled')
 
