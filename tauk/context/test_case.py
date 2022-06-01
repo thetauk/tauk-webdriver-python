@@ -310,7 +310,7 @@ class TestCase(object):
                 self.error.code_executed = frame_summary.line
                 return
 
-        logger.warning(f'Could not find a frame with filename {caller_filename} in stack summary')
+        logger.debug(f'Could not find a frame with filename {caller_filename} in stack summary')
 
     def capture_test_steps(self, testcase):
         source_lines = inspect.getsourcelines(testcase)
@@ -330,7 +330,7 @@ class TestCase(object):
                     # ensure that the start range value is never below zero
                     # get the next 9 lines after the error occurred
                     # ensure that the end range value never exceeds the len of the list
-                    self.code_context = output[max(index - 9, 0): min(index + 10, len(output))]
+                    self.code_context = output[max(index - 29, 0): min(index + 30, len(output))]
                     return
 
         self.code_context = output
@@ -346,7 +346,7 @@ class TestCase(object):
         try:
             self.capture_view_hierarchy()
         except Exception as ex:
-            logger.error('Failed to capture hierarchy', exc_info=ex)
+            logger.error('Failed to capture view hierarchy', exc_info=ex)
 
     def capture_failure_data(self, test_filename, err, test_func):
         self.status = TestStatus.FAILED
@@ -359,7 +359,7 @@ class TestCase(object):
         try:
             self.capture_view_hierarchy()
         except Exception as ex:
-            logger.error('Failed to view hierarchy', exc_info=ex)
+            logger.error('Failed to capture view hierarchy', exc_info=ex)
 
         try:
             self.capture_error(test_filename, err)
