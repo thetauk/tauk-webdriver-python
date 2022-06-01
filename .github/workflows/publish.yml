@@ -9,7 +9,7 @@ jobs:
     name: Release build and publish
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
+      - name: Checkout Code
         uses: actions/checkout@v2
       - name: Set up Python
         uses: actions/setup-python@v2
