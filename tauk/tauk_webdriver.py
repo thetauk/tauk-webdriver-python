@@ -160,18 +160,24 @@ class Tauk:
                     return result
                 finally:
                     if test_case.automation_type == AutomationTypes.APPIUM:
-                        test_case.capture_appium_logs()
-                    # TODO: Investigate about overloaded test name
-                    json_test_data = Tauk.__context.get_json_test_data(relative_file_name, test_case.method_name)
-                    test_case.id = Tauk.__context.api.upload(json_test_data)
+                        try:
+                            test_case.capture_appium_logs()
+                        except Exception as ex:
+                            logger.error('Failed to capture appium server logs', exc_info=ex)
 
-                    # Attach companion artifacts
-                    attach_companion_artifacts(Tauk.__context.companion, test_case)
-                    # Upload attachments
-                    upload_attachments(Tauk.__context.api, test_case)
+                    # TODO: Investigate about overloaded test name
+                    try:
+                        json_test_data = Tauk.__context.get_json_test_data(relative_file_name, test_case.method_name)
+                        test_case.id = Tauk.__context.api.upload(json_test_data)
+
+                        # Attach companion artifacts
+                        attach_companion_artifacts(Tauk.__context.companion, test_case)
+                        # Upload attachments
+                        upload_attachments(Tauk.__context.api, test_case)
+                    except Exception as ex:
+                        logger.error(f'Failed to update test results for the test {test_case.method_name}', exc_info=ex)
 
                     Tauk.__context.test_data.delete_test_case(relative_file_name, test_case.method_name)
-
             return invoke_test_case
 
         return inner_decorator

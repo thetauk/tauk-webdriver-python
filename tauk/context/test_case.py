@@ -40,7 +40,7 @@ class TestCase(object):
         self.webdriver_client_version: str = None
         self.browser_driver_version: str = None
         self.appium_server_version: str = None
-        self._browser_debugger_address = None
+        self._browser_debugger = {'address': '', 'page_id': ''}
         self._attachments: typing.List[tuple] = []
         self._capabilities: {} = None
         self._tags: {} = None
@@ -198,7 +198,11 @@ class TestCase(object):
 
     @property
     def browser_debugger_address(self):
-        return self._browser_debugger_address
+        return self._browser_debugger.get('address')
+
+    @property
+    def browser_debugger_page_id(self):
+        return self._browser_debugger.get('page_id')
 
     @property
     def attachments(self):
@@ -207,8 +211,8 @@ class TestCase(object):
     def _connect_to_browser_debugger(self, companion: TaukCompanion):
         try:
             # TODO: Investigate possibility of using on appium
-            companion.register_browser(self._browser_debugger_address)
-            page_id = companion.connect_page(self._browser_debugger_address)
+            companion.register_browser(self.browser_debugger_address)
+            self._browser_debugger['page_id'] = companion.connect_page(self.browser_debugger_address)
         except Exception as ex:
             logger.error('Failed to connect to browser debugger', exc_info=ex)
 
@@ -223,7 +227,7 @@ class TestCase(object):
         if test_method_name:
             driver.tauk_test_method_name = test_method_name
 
-        self._browser_debugger_address = get_browser_debugger_address(driver)
+        self._browser_debugger['address'] = get_browser_debugger_address(driver)
         if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
             self._connect_to_browser_debugger(companion)
 
@@ -257,7 +261,6 @@ class TestCase(object):
         # fetching the platformName returns the OS name.
         # In cloud-based providers, setting platformName sets the OS at the remote-end.
         self.platform_name = PlatformNames.resolve(self.capabilities.get('platformName', ''))
-
         self.platform_version = self.capabilities.get('platformVersion', None)
 
         if self.capabilities.get('browserName', None):
@@ -269,95 +272,110 @@ class TestCase(object):
         if self.screenshot and len(self.screenshot) > 0:
             logger.debug('Screenshot is already captured')
             return
-        if self.driver_instance:
-            try:
-                self.screenshot = self.driver_instance.get_screenshot_as_base64()
-            except Exception as ex:
-                logger.error("An issue occurred while trying to take a screenshot.", exc_info=ex)
+
+        if not self.driver_instance:
+            raise TaukException('driver object is None, check if driver is registered')
+
+        self.screenshot = self.driver_instance.get_screenshot_as_base64()
 
     def capture_view_hierarchy(self):
         if self.view and len(self.view) > 0:
             logger.debug('View Hierarchy is already captured')
             return
-        if self.driver_instance:
-            try:
-                if hasattr(self.driver_instance, 'contexts') and 'FLUTTER' in self.driver_instance.contexts:
-                    current_context = self.driver_instance.current_context
-                    self.driver_instance.switch_to.context('NATIVE_APP')
-                    self.view = self.driver_instance.page_source
-                    self.driver_instance.switch_to.context(current_context)
-                    return
 
-                self.view = self.driver_instance.page_source
-            except Exception as ex:
-                logger.error("An issue occurred while capturing view hierarchy.", exc_info=ex)
+        if not self.driver_instance:
+            raise TaukException('driver object is None, check if driver is registered')
+
+        if hasattr(self.driver_instance, 'contexts') and 'FLUTTER' in self.driver_instance.contexts:
+            current_context = self.driver_instance.current_context
+            self.driver_instance.switch_to.context('NATIVE_APP')
+            self.view = self.driver_instance.page_source
+            self.driver_instance.switch_to.context(current_context)
+        else:
+            self.view = self.driver_instance.page_source
 
     def capture_error(self, caller_filename, exec_info):
         exc_type, exc_value, exc_traceback = exec_info
-        stack_summary_list = traceback.extract_tb(exc_traceback)
-        filename, line_number, invoked_func, code_executed = None, None, None, None
-        for stack_trace in stack_summary_list:
-            if caller_filename in stack_trace.filename:
-                filename, line_number, invoked_func, code_executed = stack_trace
-                break
+        stack_summary = traceback.extract_tb(exc_traceback)
 
-        traceback_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        self.error = TestError()
+        self.error.error_type = exc_value.__class__.__name__
+        self.error.error_msg = str(exc_value)
+        self.error.traceback = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
 
-        self.error = {
-            'error_type': exc_value.__class__.__name__,
-            'error_msg': str(exc_value),
-            'line_number': line_number,
-            'invoked_func': invoked_func,
-            'code_executed': code_executed,
-            'traceback': traceback_str
-        }
-        return line_number
+        for frame_summary in stack_summary:
+            if caller_filename in frame_summary.filename:
+                self.error.line_number = frame_summary.lineno
+                self.error.invoked_func = frame_summary.name
+                self.error.code_executed = frame_summary.line
+                return
 
-    def capture_success_data(self):
-        self.status = TestStatus.PASSED
-        self.capture_screenshot()
-        self.capture_view_hierarchy()
+        logger.debug(f'Could not find a frame with filename {caller_filename} in stack summary')
 
-    def capture_failure_data(self, test_filename, err, test_func):
-        self.status = TestStatus.FAILED
-        self.capture_screenshot()
-        self.capture_view_hierarchy()
-
-        error_line_number = self.capture_error(test_filename, err)
-        self.capture_test_steps(testcase=test_func, error_line_number=error_line_number)
-
-    def capture_test_steps(self, testcase, error_line_number=0):
-        testcase_source_raw = inspect.getsourcelines(testcase)
-        testcase_source_clean = [step.strip() for step in testcase_source_raw[0]]
-        line_number = testcase_source_raw[1]
-
-        # Discard the initial 2 lines as they are the decorator and the testcase function name
-        testcase_source_clean = testcase_source_clean[2:]
-        line_number += 2
+    def capture_test_steps(self, testcase):
+        source_lines = inspect.getsourcelines(testcase)
+        starting_line_number = source_lines[1]
 
         output = []
-        for step in testcase_source_clean:
-            output.append(
-                {
-                    'line_number': line_number,
-                    'line_code': step
-                }
-            )
-            line_number += 1
+        for i, line in enumerate(source_lines[0]):
+            output.append({
+                'line_number': starting_line_number + i,
+                'line_code': line
+            })
 
-        if error_line_number > 0:
+        if self.error and self.error.line_number > 0:
             for index, value in enumerate(output):
-                if value['line_number'] == error_line_number:
+                if value['line_number'] == self.error.line_number:
                     # get previous 9 lines plus the line where the error occurred
                     # ensure that the start range value is never below zero
                     # get the next 9 lines after the error occurred
                     # ensure that the end range value never exceeds the len of the list
-                    result = output[max(index - 9, 0): min(index + 10, len(output))]
-                    self.code_context = result
-        else:
-            self.code_context = output
+                    self.code_context = output[max(index - 29, 0): min(index + 30, len(output))]
+                    return
+
+        self.code_context = output
+
+    def capture_success_data(self):
+        self.status = TestStatus.PASSED
+
+        try:
+            self.capture_screenshot()
+        except Exception as ex:
+            logger.error('Failed to capture screenshot', exc_info=ex)
+
+        try:
+            self.capture_view_hierarchy()
+        except Exception as ex:
+            logger.error('Failed to capture view hierarchy', exc_info=ex)
+
+    def capture_failure_data(self, test_filename, err, test_func):
+        self.status = TestStatus.FAILED
+
+        try:
+            self.capture_screenshot()
+        except Exception as ex:
+            logger.error('Failed to capture screenshot', exc_info=ex)
+
+        try:
+            self.capture_view_hierarchy()
+        except Exception as ex:
+            logger.error('Failed to capture view hierarchy', exc_info=ex)
+
+        try:
+            self.capture_error(test_filename, err)
+        except Exception as ex:
+            logger.error('Failed to capture error details', exc_info=ex)
+
+        try:
+            self.capture_test_steps(testcase=test_func)
+        except Exception as ex:
+            logger.error('Failed to capture test steps', exc_info=ex)
 
     def capture_appium_logs(self):
+        if not self.driver_instance:
+            logger.warning('Not capturing appium logs because driver instance was not registered')
+            return
+
         def format_appium_log(log_list):
             output = []
             for event in log_list:
@@ -368,8 +386,7 @@ class TestCase(object):
                 # Split at first event type occurrence
                 # in square brackets, e.g. [HTTP]
                 # https://bit.ly/3fItHEi
-                split_log_msg = re.split(r'\[|\]', ansi_escape.sub(
-                    '', event['message']), maxsplit=2)
+                split_log_msg = re.split(r'\[|\]', ansi_escape.sub('', event['message']), maxsplit=2)
 
                 formatted_event = {
                     'timestamp': event.get('timestamp'),
@@ -384,15 +401,7 @@ class TestCase(object):
         # Get last 50 log entries
         # minus the 5 log entries for issuing get_log()
         slice_range = slice(-55, -5)
-
-        if not self.driver_instance:
-            logger.warning('Not capturing appium logs because driver instance was not registered')
-            return
-
-        try:
-            self.log = format_appium_log(self.driver_instance.get_log('server')[slice_range])
-        except Exception as ex:
-            logger.error('An issue occurred while requesting the Appium server logs.', exc_info=ex)
+        self.log = format_appium_log(self.driver_instance.get_log('server')[slice_range])
 
     def add_attachment(self, file_path, attachment_type: AttachmentTypes):
         logger.debug(f'Adding attachment {attachment_type}: {file_path}')
