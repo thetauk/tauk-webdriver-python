@@ -15,7 +15,7 @@ from tauk.utils import attach_companion_artifacts, upload_attachments
 logger = logging.getLogger('tauk')
 
 
-def _should_observe(test):
+def _should_observe(test: unittest.case.TestCase):
     return hasattr(test, 'tauk_skip') and test.tauk_skip is True
 
 
@@ -72,22 +72,22 @@ class TaukListener(unittest.TestResult):
             test_case = self.tests[test.id()]
             test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
 
-            if test_case.automation_type is AutomationTypes.APPIUM:
-                test_case.capture_appium_logs()
+            if test_case.automation_type is AutomationTypes.APPIUM:  # Capture Appium logs
+                try:
+                    test_case.capture_appium_logs()
+                except Exception as ex:
+                    logger.error('Failed to capture appium server logs', exc_info=ex)
 
             ctx = Tauk.get_context()
-
             caller_filename = inspect.getfile(test.__class__)
             caller_rel_filename = os.path.relpath(caller_filename, os.getcwd())
-            upload_result = ctx.api.upload(
-                ctx.get_json_test_data(caller_rel_filename, test_case.method_name))
+            upload_result = ctx.api.upload(ctx.get_json_test_data(caller_rel_filename, test_case.method_name))
             test_case.id = upload_result.get(caller_rel_filename).get(test_case.method_name)
 
             # Attach companion artifacts
             attach_companion_artifacts(ctx.companion, test_case)
             # Upload attachments
             upload_attachments(ctx.api, test_case)
-
         except Exception as ex:
             logger.error('Failed to update test results', exc_info=ex)
 
