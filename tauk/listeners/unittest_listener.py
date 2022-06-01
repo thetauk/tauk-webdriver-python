@@ -89,7 +89,7 @@ class TaukListener(unittest.TestResult):
             # Upload attachments
             upload_attachments(ctx.api, test_case)
         except Exception as ex:
-            logger.error('Failed to update test results', exc_info=ex)
+            logger.error(f'Failed to update test results for the test {test.id()}', exc_info=ex)
 
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
         super().addError(test, err)
