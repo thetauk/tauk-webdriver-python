@@ -160,7 +160,11 @@ class Tauk:
                     return result
                 finally:
                     if test_case.automation_type == AutomationTypes.APPIUM:
-                        test_case.capture_appium_logs()
+                        try:
+                            test_case.capture_appium_logs()
+                        except Exception as ex:
+                            logger.error('Failed to capture appium server logs', exc_info=ex)
+
                     # TODO: Investigate about overloaded test name
                     json_test_data = Tauk.__context.get_json_test_data(relative_file_name, test_case.method_name)
                     test_case.id = Tauk.__context.api.upload(json_test_data)
