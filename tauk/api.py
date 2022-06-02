@@ -2,6 +2,7 @@ import gzip
 import logging
 import os
 import platform
+import zlib
 from datetime import datetime, timezone
 
 import requests
@@ -168,8 +169,9 @@ class TaukApi:
 
         headers['Content-Encoding'] = 'gzip'
         logger.debug(f'Sending execution finish: url[{url}], headers[{headers}], file[{file_path}]')
-        with gzip.open(file_path, 'rb') as file:
-            response = requests.post(url, data=file, headers=headers)
+        with open(file_path, 'rb') as file:
+            body = zlib.compress(file.read())
+            response = requests.post(url, data=body, headers=headers)
             if not response.ok:
                 logger.error(
                     f'Failed to upload execution error logs. Response[{response.status_code}]: {response.text}')
