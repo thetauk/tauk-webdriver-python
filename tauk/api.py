@@ -1,6 +1,8 @@
+import gzip
 import logging
 import os
 import platform
+import zlib
 from datetime import datetime, timezone
 
 import requests
@@ -147,5 +149,32 @@ class TaukApi:
                 raise TaukException('failed to upload attachment')
 
             logger.debug(f'Response: {response.text}')
+
+    def finish_execution(self, file_path=None):
+        end_ts = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+        url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/finish/{end_ts}'
+
+        headers = {
+            'Authorization': f'Bearer {self._api_token}',
+        }
+
+        if not file_path:
+            logger.debug(f'Sending execution finish: url[{url}], headers[{headers}]')
+            response = requests.post(url, headers=headers)
+            if not response.ok:
+                logger.error(
+                    f'Failed to upload execution error logs. Response[{response.status_code}]: {response.text}')
+                raise TaukException('failed to upload execution error logs')
+            return
+
+        headers['Content-Encoding'] = 'gzip'
+        logger.debug(f'Sending execution finish: url[{url}], headers[{headers}], file[{file_path}]')
+        with open(file_path, 'rb') as file:
+            body = gzip.compress(file.read())
+            response = requests.post(url, data=body, headers=headers)
+            if not response.ok:
+                logger.error(
+                    f'Failed to upload execution error logs. Response[{response.status_code}]: {response.text}')
+                raise TaukException('failed to upload execution error logs')
 
 # TODO: Add API to remove browser

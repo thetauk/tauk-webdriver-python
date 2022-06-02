@@ -14,7 +14,7 @@ __classifiers__ = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-__requires__ = ["requests", "filelock", "jsonpickle", "tzlocal"]
+__requires__ = ["requests", "filelock", "jsonpickle", "tzlocal", "python-json-logger"]
 
 __extra_requires__ = {
 }
@@ -38,7 +38,6 @@ def _init_logger():
     tauk_logger.addHandler(file_handler)
 
     stream_handler = logging.StreamHandler()
-    # stream_handler.setLevel(logging.ERROR)
     stream_handler.setFormatter(formatter)
     tauk_logger.addHandler(stream_handler)
 
