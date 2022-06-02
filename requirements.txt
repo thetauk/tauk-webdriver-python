@@ -3,3 +3,4 @@ filelock
 responses
 jsonpickle
 tzlocal
+python-json-logger
