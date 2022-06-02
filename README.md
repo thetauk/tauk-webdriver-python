@@ -12,10 +12,11 @@ $ pip install tauk
 
 ## Usage
 
-### Import the Tauk class from the package in your test suite.
+### Import the Tauk and TaukConfig classes from the package in your test suite.
 
 ```python
 from tauk.tauk_webdriver import Tauk
+from tauk.config import TaukConfig
 ```
 
 
@@ -39,7 +40,7 @@ so that it can tie multiple processes with the same execution.
 Tauk(TaukConfig(api_token="API-TOKEN", project_id="PROJECT-ID", multiprocess_run=True))
 ```
 
-You can also pass these argument inputs through environment variables. 
+Alternatively, you can also pass these argument inputs through environment variables instead of through the `TaukConfig` class. 
 In your local environment, you can set the following variables:
 
 ```bash
@@ -140,4 +141,4 @@ class TestDataTest(unittest.TestCase):
 
     ...
 
-``` 
+```
