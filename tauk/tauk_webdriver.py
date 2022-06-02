@@ -108,7 +108,10 @@ class Tauk:
                 logger.error('Failed to kill companion app', exc_info=ex)
 
             try:
-                Tauk.__context.api.finish_execution(Tauk.__context.error_log)
+                if os.path.exists(Tauk.__context.error_log) and os.path.getsize(Tauk.__context.error_log) > 0:
+                    Tauk.__context.api.finish_execution(Tauk.__context.error_log)
+                else:
+                    Tauk.__context.api.finish_execution()
             except Exception as ex:
                 logger.error('Failed report execution complete', exc_info=ex)
 
