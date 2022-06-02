@@ -16,6 +16,7 @@ $ pip install tauk
 
 ```python
 from tauk.tauk_webdriver import Tauk
+from tauk.config import TaukConfig
 ```
 
 
