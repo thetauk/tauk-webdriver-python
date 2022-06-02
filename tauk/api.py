@@ -2,10 +2,10 @@ import gzip
 import logging
 import os
 import platform
-import zlib
 from datetime import datetime, timezone
 
 import requests
+from requests.adapters import HTTPAdapter
 
 import tauk
 from tauk.context.test_data import TestData
@@ -15,15 +15,31 @@ from tauk.utils import shortened_json
 
 logger = logging.getLogger('tauk')
 
+request_timeout = (3, 6)  # (Connection timeout, Receive data timeout)
+POST = 'POST'
+GET = 'GET'
+
 
 class TaukApi:
     run_id: str = None
 
     def __init__(self, api_token, project_id, multi_process_run=False):
-        self._API_URL = os.environ.get('TAUK_API_URL', 'https://www.tauk.com/api/v1')
+        self._TAUK_API_URL = 'https://www.tauk.com/api/v1'
+        self._API_URL = os.environ.get('TAUK_API_URL', self._TAUK_API_URL)
         self._api_token = api_token
         self._project_id = project_id
         self._multi_process_run = multi_process_run
+
+    def request(self, method, url, headers=None, data=None, timeout=request_timeout, **kwargs):
+        tauk_adapter = HTTPAdapter(max_retries=3)
+        if not headers:
+            headers = {}
+        headers.update({'Authorization': f'Bearer {self._api_token}'})
+        with requests.Session() as session:
+            session.mount(self._TAUK_API_URL, tauk_adapter)
+
+            response = session.request(method, url, timeout=timeout, data=data, headers=headers, **kwargs)
+            return response
 
     def set_token(self, api_token, project_id):
         self._api_token = api_token
@@ -51,12 +67,8 @@ class TaukApi:
         if run_id:
             body['run_id'] = run_id
 
-        headers = {
-            'Authorization': f'Bearer {self._api_token}'
-        }
-
-        logger.debug(f'Initializing run with: url[{url}], headers[{headers}], body[{body}]')
-        response = requests.post(url, json=body, headers=headers)
+        logger.debug(f'Initializing run with: url[{url}], body[{body}]')
+        response = self.request(POST, url, json=body)
         if not response.ok:
             logger.error(f'Failed to initialize Tauk execution. Response[{response.status_code}]: {response.text}')
             raise TaukException('failed to initialize tauk execution')
@@ -79,11 +91,7 @@ class TaukApi:
             'start_time': start_time,
         }
 
-        headers = {
-            'Authorization': f'Bearer {self._api_token}'
-        }
-
-        response = requests.post(url, json=body, headers=headers)
+        response = self.request(POST, url, json=body)
         logger.info(f'Response: {response.json()}')
         if not response.ok:
             logger.error(f'Failed to register test start. Response[{response.status_code}]: {response.text}')
@@ -100,11 +108,7 @@ class TaukApi:
             'end_time': end_time,
         }
 
-        headers = {
-            'Authorization': f'Bearer {self._api_token}'
-        }
-
-        response = requests.post(url, json=body, headers=headers)
+        response = self.request(POST, url, json=body)
         logger.info(f'Response: {response.json()}')
         if not response.ok:
             logger.error(f'Failed to register test finish. Response[{response.status_code}]: {response.text}')
@@ -114,15 +118,10 @@ class TaukApi:
 
     def upload(self, test_data):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
-        body = test_data
+        headers = {'Content-Type': 'application/json'}
 
-        headers = {
-            'Authorization': f'Bearer {self._api_token}',
-            'Content-Type': 'application/json'
-        }
-
-        logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{shortened_json(body)}]')
-        response = requests.post(url, data=body, headers=headers)
+        logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{shortened_json(test_data)}]')
+        response = self.request(POST, url, data=test_data, headers=headers)
         if not response.ok:
             logger.error(f'Failed to upload test. Response[{response.status_code}]: {response.text}')
             raise TaukException('failed to upload test results')
@@ -136,14 +135,11 @@ class TaukApi:
 
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/attachment/upload/{test_id}'
 
-        headers = {
-            'Authorization': f'Bearer {self._api_token}',
-            'Tauk-Attachment-Type': f'{attachment_type.value}',
-        }
+        headers = {'Tauk-Attachment-Type': f'{attachment_type.value}'}
 
         logger.debug(f'Uploading test attachment: url[{url}], headers[{headers}], file[{file_path}]')
         with open(file_path, 'rb') as file:
-            response = requests.post(url, data=file, headers=headers)
+            response = self.request(POST, url, data=file, headers=headers)
             if not response.ok:
                 logger.error(f'Failed to upload attachment. Response[{response.status_code}]: {response.text}')
                 raise TaukException('failed to upload attachment')
@@ -154,24 +150,20 @@ class TaukApi:
         end_ts = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/finish/{end_ts}'
 
-        headers = {
-            'Authorization': f'Bearer {self._api_token}',
-        }
-
         if not file_path:
-            logger.debug(f'Sending execution finish: url[{url}], headers[{headers}]')
-            response = requests.post(url, headers=headers)
+            logger.debug(f'Sending execution finish: url[{url}]')
+            response = self.request(POST, url)
             if not response.ok:
                 logger.error(
                     f'Failed to upload execution error logs. Response[{response.status_code}]: {response.text}')
                 raise TaukException('failed to upload execution error logs')
             return
 
-        headers['Content-Encoding'] = 'gzip'
+        headers = {'Content-Encoding': 'gzip'}
         logger.debug(f'Sending execution finish: url[{url}], headers[{headers}], file[{file_path}]')
         with open(file_path, 'rb') as file:
             body = gzip.compress(file.read())
-            response = requests.post(url, data=body, headers=headers)
+            response = self.request(POST, url, data=body, headers=headers)
             if not response.ok:
                 logger.error(
                     f'Failed to upload execution error logs. Response[{response.status_code}]: {response.text}')
