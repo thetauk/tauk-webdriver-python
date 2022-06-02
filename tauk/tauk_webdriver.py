@@ -100,16 +100,22 @@ class Tauk:
     def destroy(cls):
         if Tauk.is_initialized():
             logger.debug('Destroying Tauk context')
-            try:
-                Tauk.__context.delete_execution_files()
-            except Exception as ex:
-                logger.error('Failed to delete execution file', exc_info=ex)
 
             try:
                 if Tauk.__context.companion and Tauk.__context.companion.is_running():
                     Tauk.__context.companion.kill()
             except Exception as ex:
                 logger.error('Failed to kill companion app', exc_info=ex)
+
+            try:
+                Tauk.__context.api.finish_execution(Tauk.__context.error_log)
+            except Exception as ex:
+                logger.error('Failed report execution complete', exc_info=ex)
+
+            try:
+                Tauk.__context.delete_execution_files()
+            except Exception as ex:
+                logger.error('Failed to delete execution file', exc_info=ex)
 
             del cls.instance
 
@@ -178,6 +184,7 @@ class Tauk:
                         logger.error(f'Failed to update test results for the test {test_case.method_name}', exc_info=ex)
 
                     Tauk.__context.test_data.delete_test_case(relative_file_name, test_case.method_name)
+
             return invoke_test_case
 
         return inner_decorator
