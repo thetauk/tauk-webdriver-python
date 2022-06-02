@@ -158,7 +158,7 @@ class TaukApi:
         }
 
         if not file_path:
-            logger.debug(f'Sending execution finish: url[{url}], headers[{headers}], end time[{end_ts}]')
+            logger.debug(f'Sending execution finish: url[{url}], headers[{headers}]')
             response = requests.post(url, headers=headers)
             if not response.ok:
                 logger.error(
@@ -167,7 +167,7 @@ class TaukApi:
             return
 
         headers['Content-Encoding'] = 'gzip'
-        logger.debug(f'Sending execution finish: url[{url}], headers[{headers}], end time[{end_ts}], file[{file_path}]')
+        logger.debug(f'Sending execution finish: url[{url}], headers[{headers}], file[{file_path}]')
         with gzip.open(file_path, 'rb') as file:
             response = requests.post(url, data=file, headers=headers)
             if not response.ok:
