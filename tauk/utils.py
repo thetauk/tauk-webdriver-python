@@ -80,8 +80,7 @@ def attach_companion_artifacts(companion, test_case):
         # It's possible that companion started and crashed before this point
         # So we want to be able to check if there are any logs if we have a valid page ID
         if test_case.browser_debugger_page_id:
-            companion_attachments = companion.get_attachments(browser_debugger_address,
-                                                              connected_page_id=test_case.browser_debugger_page_id)
+            companion_attachments = companion.get_attachments(connected_page_id=test_case.browser_debugger_page_id)
             for file, file_type in companion_attachments:
                 try:
                     test_case.add_attachment(file, file_type)
