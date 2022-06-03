@@ -180,7 +180,10 @@ class Tauk:
                         test_case.id = Tauk.__context.api.upload(json_test_data)
 
                         # Attach companion artifacts
-                        attach_companion_artifacts(Tauk.__context.companion, test_case)
+                        try:
+                            attach_companion_artifacts(Tauk.__context.companion, test_case)
+                        except Exception as e:
+                            logger.error('Failed to attach companion artifacts', exc_info=e)
                         # Upload attachments
                         upload_attachments(Tauk.__context.api, test_case)
                     except Exception as ex:

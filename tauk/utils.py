@@ -67,19 +67,28 @@ def attach_companion_artifacts(companion, test_case):
             connected_page = test_case.browser_debugger_page_id
             if connected_page:
                 # Try and close browser connection
-                # If the browser already quit then close_page with throw an error
-                try:
+                try:  # If the browser already quit then close_page will throw an error
                     companion.close_page(browser_debugger_address)
                 except Exception:
                     logger.debug(f'[Companion] Page {connected_page} was already closed')
 
-        companion_attachments = companion.get_attachments(browser_debugger_address)
-        for attachment_file, attachment_type in companion_attachments:
             try:
-                test_case.add_attachment(attachment_file, attachment_type)
+                companion.unregister_browser(browser_debugger_address)
             except Exception as ex:
-                logger.error(f'[Companion] Failed to add companion attachment [{attachment_type}: {attachment_file}]',
-                             exc_info=ex)
+                logger.warning(f'Failed to unregister browser for test [{test_case.method_name}]', exc_info=ex)
+
+        # It's possible that companion started and crashed before this point
+        # So we want to be able to check if there are any logs if we have a valid page ID
+        if test_case.browser_debugger_page_id:
+            companion_attachments = companion.get_attachments(browser_debugger_address,
+                                                              connected_page_id=test_case.browser_debugger_page_id)
+            for file, file_type in companion_attachments:
+                try:
+                    test_case.add_attachment(file, file_type)
+                except Exception as ex:
+                    logger.error(f'[Companion] Failed to add attachment [{file_type}: {file}]', exc_info=ex)
+        else:
+            logger.warning(f'[Companion] Page connection was never made for {test_case.browser_debugger_address}')
     else:
         logger.debug('[Companion] Capture is disabled')
 
