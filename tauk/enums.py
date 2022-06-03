@@ -90,10 +90,10 @@ class AttachmentTypes(TaukEnum):
             raise TaukException(f'unable to resolve platform name {name}')
 
     @classmethod
-    def is_companion_attachment(cls):
-        if cls.name in [AttachmentTypes.COMPANION_EXCEPTION_LOGS,
-                        AttachmentTypes.COMPANION_EXCEPTION_LOGS,
-                        AttachmentTypes.COMPANION_BROWSER_LOGS]:
+    def is_companion_attachment(cls, attachment_type):
+        if attachment_type in [AttachmentTypes.COMPANION_EXCEPTION_LOGS,
+                               AttachmentTypes.COMPANION_EXCEPTION_LOGS,
+                               AttachmentTypes.COMPANION_BROWSER_LOGS]:
             return True
 
         return False

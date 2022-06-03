@@ -6,6 +6,8 @@ import requests
 
 from contextlib import closing
 
+from tauk.enums import AttachmentTypes
+
 logger = logging.getLogger('tauk')
 
 
@@ -99,7 +101,7 @@ def upload_attachments(api, test_case):
         try:
             api.upload_attachment(file_path, attachment_type, test_case.id)
             # If it's a companion attachment we should delete it after successful upload
-            if attachment_type.is_companion_attachment():
+            if AttachmentTypes.is_companion_attachment(attachment_type):
                 if os.path.exists(file_path):
                     logger.debug(f'Deleting companion attachment {file_path}')
                     os.remove(file_path)
