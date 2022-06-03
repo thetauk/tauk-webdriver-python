@@ -240,7 +240,7 @@ class TestCase(object):
             return inner
 
         # If browser is not quit and shared in multiple test cases then we have to make sure this is not recursive
-        if not 'tauk_callback' in str(driver.quit):
+        if tauk_callback.__name__ not in str(driver.quit):
             logger.debug('Attaching tauk callback to driver.quit()')
             driver.quit = tauk_callback(driver.quit)
 

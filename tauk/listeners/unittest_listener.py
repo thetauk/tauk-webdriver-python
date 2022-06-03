@@ -85,7 +85,10 @@ class TaukListener(unittest.TestResult):
             test_case.id = upload_result.get(caller_rel_filename).get(test_case.method_name)
 
             # Attach companion artifacts
-            attach_companion_artifacts(ctx.companion, test_case)
+            try:
+                attach_companion_artifacts(ctx.companion, test_case)
+            except Exception as e:
+                logger.error('Failed to attach companion artifacts', exc_info=e)
             # Upload attachments
             upload_attachments(ctx.api, test_case)
         except Exception as ex:
