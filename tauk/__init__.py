@@ -14,7 +14,7 @@ __classifiers__ = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-__requires__ = ["requests", "filelock", "jsonpickle", "tzlocal", "python-json-logger"]
+__requires__ = ["requests", "filelock", "jsonpickle", "tzlocal", "python-json-logger", "tqdm"]
 
 __extra_requires__ = {
 }

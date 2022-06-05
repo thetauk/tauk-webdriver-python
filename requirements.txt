@@ -4,3 +4,4 @@ responses
 jsonpickle
 tzlocal
 python-json-logger
+tqdm
