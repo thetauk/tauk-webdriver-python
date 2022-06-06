@@ -94,6 +94,6 @@ if sys.argv[0].endswith("__main__.py"):
 
     if args.install:
         # We tie a  assistant version for every release
-        install_assistant(args.token, '0.2.2' if not args.version else args.version)
+        install_assistant(args.token, '0.2.5' if not args.version else args.version)
     else:
         print(parser.format_help())

@@ -15,7 +15,7 @@ from tauk.utils import shortened_json
 
 logger = logging.getLogger('tauk')
 
-request_timeout = (3, 6)  # (Connection timeout, Receive data timeout)
+request_timeout = (6, 15)  # (Connection timeout, Receive data timeout)
 POST = 'POST'
 GET = 'GET'
 
@@ -38,7 +38,7 @@ class TaukApi:
         with requests.Session() as session:
             session.mount(self._TAUK_API_URL, tauk_adapter)
 
-            response = session.request(method, url, timeout=timeout, data=data, headers=headers, **kwargs)
+            response = session.request(method, url, data=data, headers=headers, **kwargs)
             return response
 
     def set_token(self, api_token, project_id):
