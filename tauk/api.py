@@ -38,7 +38,7 @@ class TaukApi:
         with requests.Session() as session:
             session.mount(self._TAUK_API_URL, tauk_adapter)
 
-            response = session.request(method, url, data=data, headers=headers, **kwargs)
+            response = session.request(method, url, timeout=timeout, data=data, headers=headers, **kwargs)
             return response
 
     def set_token(self, api_token, project_id):
