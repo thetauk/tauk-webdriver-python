@@ -8,7 +8,7 @@ import typing
 
 from contextlib import suppress
 from pathlib import Path
-from tauk.companion.companion import TaukCompanion
+from tauk.assistant.assistant import TaukAssistant
 from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames, AttachmentTypes
 from tauk.exceptions import TaukException
@@ -208,15 +208,15 @@ class TestCase(object):
     def attachments(self):
         return self._attachments
 
-    def _connect_to_browser_debugger(self, companion: TaukCompanion):
+    def _connect_to_browser_debugger(self, assistant: TaukAssistant):
         try:
             # TODO: Investigate possibility of using on appium
-            companion.register_browser(self.browser_debugger_address)
-            self._browser_debugger['page_id'] = companion.connect_page(self.browser_debugger_address)
+            assistant.register_browser(self.browser_debugger_address)
+            self._browser_debugger['page_id'] = assistant.connect_page(self.browser_debugger_address)
         except Exception as ex:
             logger.error('Failed to connect to browser debugger', exc_info=ex)
 
-    def register_driver(self, driver, companion: TaukCompanion = None, test_filename=None, test_method_name=None):
+    def register_driver(self, driver, assistant: TaukAssistant = None, test_filename=None, test_method_name=None):
         if not driver or 'webdriver' not in f'{type(driver)}':
             raise TaukException(f'Driver {type(driver)} is not of type webdriver')
 
@@ -228,8 +228,8 @@ class TestCase(object):
             driver.tauk_test_method_name = test_method_name
 
         self._browser_debugger['address'] = get_browser_debugger_address(driver)
-        if companion and companion.is_running() and companion.config.is_cdp_capture_enabled():
-            self._connect_to_browser_debugger(companion)
+        if assistant and assistant.is_running() and assistant.config.is_cdp_capture_enabled():
+            self._connect_to_browser_debugger(assistant)
 
         def tauk_callback(func):
             def inner():

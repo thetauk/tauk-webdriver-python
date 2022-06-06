@@ -14,7 +14,7 @@ from tauk.context.context import TaukContext
 from tauk.enums import AutomationTypes, AttachmentTypes
 from tauk.exceptions import TaukException, TaukTestMethodNotFoundException
 from tauk.context.test_data import TestCase
-from tauk.utils import attach_companion_artifacts, upload_attachments
+from tauk.utils import attach_assistant_artifacts, upload_attachments
 
 logger = logging.getLogger('tauk')
 
@@ -102,10 +102,10 @@ class Tauk:
             logger.debug('Destroying Tauk context')
 
             try:
-                if Tauk.__context.companion and Tauk.__context.companion.is_running():
-                    Tauk.__context.companion.kill()
+                if Tauk.__context.assistant and Tauk.__context.assistant.is_running():
+                    Tauk.__context.assistant.kill()
             except Exception as ex:
-                logger.error('Failed to kill companion app', exc_info=ex)
+                logger.error('Failed to kill assistant app', exc_info=ex)
 
             try:
                 if os.path.exists(Tauk.__context.error_log) and os.path.getsize(Tauk.__context.error_log) > 0:
@@ -138,7 +138,7 @@ class Tauk:
         test = Tauk._get_testcase(relative_file_name, method_name)
         if test is None:
             raise TaukException(f'TaukListener was not attached to unittest runner')
-        test.register_driver(driver, Tauk.__context.companion, relative_file_name, method_name)
+        test.register_driver(driver, Tauk.__context.assistant, relative_file_name, method_name)
 
     @classmethod
     def observe(cls, custom_test_name=None, excluded=False):
@@ -179,11 +179,11 @@ class Tauk:
                         json_test_data = Tauk.__context.get_json_test_data(relative_file_name, test_case.method_name)
                         test_case.id = Tauk.__context.api.upload(json_test_data)
 
-                        # Attach companion artifacts
+                        # Attach assistant artifacts
                         try:
-                            attach_companion_artifacts(Tauk.__context.companion, test_case)
+                            attach_assistant_artifacts(Tauk.__context.assistant, test_case)
                         except Exception as e:
-                            logger.error('Failed to attach companion artifacts', exc_info=e)
+                            logger.error('Failed to attach assistant artifacts', exc_info=e)
                         # Upload attachments
                         upload_attachments(Tauk.__context.api, test_case)
                     except Exception as ex:

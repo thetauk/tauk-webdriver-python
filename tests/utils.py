@@ -98,18 +98,17 @@ def mock_success(expected_run_id='6d917db6-cf5d-4f30-8303-6eefc35e7558', validat
             method_name = frame_info.frame.f_code.co_names[-1]
 
     return mock(
-        urls=[re.compile(r'https://www.tauk.com/api/v1/execution/.+/initialize'),
-              re.compile(r'https://www.tauk.com/api/v1/execution/.+/.+/report/upload')],
-        json_responses=[{'run_id': expected_run_id, 'message': 'success'},
-                        {
-                            'message': 'success',
-                            'result': {
-                                file_name: {
-                                    method_name: 'test-id'
-                                }
-                            }
-                        }],
-        statuses=[200, 200],
+        urls=[
+            re.compile(r'https://www.tauk.com/api/v1/execution/.+/initialize'),
+            re.compile(r'https://www.tauk.com/api/v1/execution/.+/.+/report/upload'),
+            re.compile(r'https://www.tauk.com/api/v1/execution/.+/.+/finish/.+')
+        ],
+        json_responses=[
+            {'run_id': expected_run_id, 'message': 'success'},
+            {'message': 'success', 'result': {file_name: {method_name: 'test-id'}}},
+            {'message': 'success'},
+        ],
+        statuses=[200, 200, 200],
         validation=validation,
         multiprocess=multiprocess,
         init_tauk=init_tauk,

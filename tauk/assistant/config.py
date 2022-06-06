@@ -1,4 +1,4 @@
-class CompanionConfig:
+class AssistantConfig:
     def __init__(self) -> None:
         self.cdp_config = {
             'runtime': {
@@ -24,7 +24,7 @@ class CompanionConfig:
 
     @staticmethod
     def default():
-        return CompanionConfig()
+        return AssistantConfig()
 
     def capture_console_logs(self, capture: bool, log_level='error', filters=''):
         self.cdp_config['runtime']['consoleLogs']['enabled'] = capture
@@ -55,4 +55,4 @@ class CompanionConfig:
                self.is_capturing_uncaught_exceptions()
 
     def __str__(self):
-        return f'CompanionConfig: {self.cdp_config}'
+        return f'AssistantConfig: {self.cdp_config}'
