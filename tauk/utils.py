@@ -62,36 +62,36 @@ def shortened_json(json_text):
     return json_text
 
 
-def attach_companion_artifacts(companion, test_case):
+def attach_assistant_artifacts(assistant, test_case):
     browser_debugger_address = test_case.browser_debugger_address
-    if companion and companion.config.is_cdp_capture_enabled():
-        if companion.is_running():
+    if assistant and assistant.config.is_cdp_capture_enabled():
+        if assistant.is_running():
             connected_page = test_case.browser_debugger_page_id
             if connected_page:
                 # Try and close browser connection
                 try:  # If the browser already quit then close_page will throw an error
-                    companion.close_page(browser_debugger_address)
+                    assistant.close_page(browser_debugger_address)
                 except Exception:
-                    logger.debug(f'[Companion] Page {connected_page} was already closed')
+                    logger.debug(f'[Assistant] Page {connected_page} was already closed')
 
             try:
-                companion.unregister_browser(browser_debugger_address)
+                assistant.unregister_browser(browser_debugger_address)
             except Exception as ex:
                 logger.warning(f'Failed to unregister browser for test [{test_case.method_name}]', exc_info=ex)
 
-        # It's possible that companion started and crashed before this point
+        # It's possible that assistant started and crashed before this point
         # So we want to be able to check if there are any logs if we have a valid page ID
         if test_case.browser_debugger_page_id:
-            companion_attachments = companion.get_attachments(connected_page_id=test_case.browser_debugger_page_id)
-            for file, file_type in companion_attachments:
+            assistant_attachments = assistant.get_attachments(connected_page_id=test_case.browser_debugger_page_id)
+            for file, file_type in assistant_attachments:
                 try:
                     test_case.add_attachment(file, file_type)
                 except Exception as ex:
-                    logger.error(f'[Companion] Failed to add attachment [{file_type}: {file}]', exc_info=ex)
+                    logger.error(f'[Assistant] Failed to add attachment [{file_type}: {file}]', exc_info=ex)
         else:
-            logger.warning(f'[Companion] Page connection was never made for {test_case.browser_debugger_address}')
+            logger.warning(f'[Assistant] Page connection was never made for {test_case.browser_debugger_address}')
     else:
-        logger.debug('[Companion] Capture is disabled')
+        logger.debug('[Assistant] Capture is disabled')
 
 
 def upload_attachments(api, test_case):
@@ -100,10 +100,10 @@ def upload_attachments(api, test_case):
     for file_path, attachment_type in test_case.attachments:
         try:
             api.upload_attachment(file_path, attachment_type, test_case.id)
-            # If it's a companion attachment we should delete it after successful upload
-            if AttachmentTypes.is_companion_attachment(attachment_type):
+            # If it's an assistant attachment we should delete it after successful upload
+            if AttachmentTypes.is_assistant_attachment(attachment_type):
                 if os.path.exists(file_path):
-                    logger.debug(f'Deleting companion attachment {file_path}')
+                    logger.debug(f'Deleting assistant attachment {file_path}')
                     os.remove(file_path)
         except Exception as ex:
             logger.error(f'Failed to upload attachment {attachment_type}: {file_path}', exc_info=ex)

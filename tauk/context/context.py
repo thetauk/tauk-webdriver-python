@@ -6,7 +6,7 @@ import uuid
 import jsonpickle
 
 from tauk.api import TaukApi
-from tauk.companion.companion import TaukCompanion
+from tauk.assistant.assistant import TaukAssistant
 from tauk.config import TaukConfig
 from tauk.context.test_data import TestData
 from tauk.exceptions import TaukException
@@ -26,14 +26,14 @@ class TaukContext:
         self._exec_file = os.path.join(self.exec_dir, 'exec.run')
         self.api = TaukApi(tauk_config.api_token, tauk_config.project_id, tauk_config.multiprocess_run)
 
-        # Initialize Tauk Companion
-        self.companion: TaukCompanion | None = None
-        if tauk_config.is_companion_enabled():
-            self.companion = TaukCompanion(tauk_config.api_token, self.exec_dir, tauk_config.companion_config)
+        # Initialize Tauk Assistant
+        self.assistant: TaukAssistant | None = None
+        if tauk_config.is_assistant_enabled():
+            self.assistant = TaukAssistant(tauk_config.api_token, self.exec_dir, tauk_config.assistant_config)
             try:
-                self.companion.launch()
+                self.assistant.launch()
             except Exception as ex:
-                logger.error('Failed to launch tauk companion', exc_info=ex)
+                logger.error('Failed to launch tauk assistant', exc_info=ex)
 
         if tauk_config.multiprocess_run:
             self._setup_execution_file()
@@ -104,10 +104,10 @@ class TaukContext:
         if os.path.exists(self.error_log):
             os.remove(self.error_log)
 
-        # Delete companion dir
-        companion_dir = os.path.join(self.exec_dir, 'companion')
-        if os.path.exists(companion_dir):
-            shutil.rmtree(companion_dir)
+        # Delete assistant dir
+        assistant_dir = os.path.join(self.exec_dir, 'assistant')
+        if os.path.exists(assistant_dir):
+            shutil.rmtree(assistant_dir)
 
         os.rmdir(self.exec_dir)
 

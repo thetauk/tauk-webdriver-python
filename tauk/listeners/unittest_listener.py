@@ -10,7 +10,7 @@ from tauk.config import TaukConfig
 from tauk.context.test_case import TestCase
 from tauk.enums import TestStatus, AutomationTypes
 from tauk.tauk_webdriver import Tauk
-from tauk.utils import attach_companion_artifacts, upload_attachments
+from tauk.utils import attach_assistant_artifacts, upload_attachments
 
 logger = logging.getLogger('tauk')
 
@@ -84,11 +84,11 @@ class TaukListener(unittest.TestResult):
             upload_result = ctx.api.upload(ctx.get_json_test_data(caller_rel_filename, test_case.method_name))
             test_case.id = upload_result.get(caller_rel_filename).get(test_case.method_name)
 
-            # Attach companion artifacts
+            # Attach assistant artifacts
             try:
-                attach_companion_artifacts(ctx.companion, test_case)
+                attach_assistant_artifacts(ctx.assistant, test_case)
             except Exception as e:
-                logger.error('Failed to attach companion artifacts', exc_info=e)
+                logger.error('Failed to attach assistant artifacts', exc_info=e)
             # Upload attachments
             upload_attachments(ctx.api, test_case)
         except Exception as ex:
