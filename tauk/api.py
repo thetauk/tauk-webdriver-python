@@ -15,7 +15,7 @@ from tauk.utils import shortened_json
 
 logger = logging.getLogger('tauk')
 
-request_timeout = (6, 15)  # (Connection timeout, Receive data timeout)
+request_timeout = (15, 30)  # (Connection timeout, Receive data timeout)
 POST = 'POST'
 GET = 'GET'
 
