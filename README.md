@@ -158,7 +158,7 @@ python -m tauk assistant -i -t <Your-API-Token>
 
 This will download the Tauk Assistant binary to your `.tauk` directory, which will be in `~/.tauk` by default, unless you have specified a custom path.
 
-To use the Tauk Assistant as part of a test execution you can configure it in your `TaukConfig`. The Tauk Python package will check your `.tauk` directory for the Tauk Assistant binary, but you can alternatively provide the absolute path to the Tauk Assistant binary as an environment variable.
+To use the Tauk Assistant as part of a test execution you can configure it in your `TaukConfig`. You can specify the location of the Tauk Assistant binary from your `TaukConfig` or provide it as an environment variable. If the Tauk Python Package does not find your Tauk Assistant binary in either of these two locations, it will check if the Tauk Assistant exists in your `PATH`.
 
 
 
@@ -167,13 +167,15 @@ To use the Tauk Assistant as part of a test execution you can configure it in yo
 ```python
 config = TaukConfig(api_token="API-TOKEN", project_id="PROJECT-ID")
 config.assistant_config = AssistantConfig.default()
+# Providing the Tauk Assistant path in code
+config.assistant_config.executable_path = '~/.tauk/binaries/tauk-assistant'
 Tauk(config)
 ```
 
 The example above shows the default option, which at this moment of time will capture the Browser Logs (`error` level), Exception Logs, and Console Logs (`error` level). This can be customized with the `AssistantConfig`. For example, if you wanted to capture the Console Logs with an `warn` level:
 
 ```python
-AssistantConfig.capture_console_logs(True, log_level='warn')
+config.capture_console_logs(True, log_level='warn')
 ```
 
 
