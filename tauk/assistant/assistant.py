@@ -1,9 +1,10 @@
 import logging
 import os
-import subprocess
 import time
 import requests
+import subprocess
 
+from pathlib import Path
 from tauk.assistant.config import AssistantConfig
 from tauk.enums import AttachmentTypes
 from tauk.exceptions import TaukException
@@ -16,13 +17,34 @@ class TaukAssistant:
 
     def __init__(self, api_token: str, execution_dir: str, config: AssistantConfig) -> None:
         self.config = config
-        self._executable_path = os.getenv('TAUK_ASSISTANT_EXECUTABLE', 'tauk-assistant')
+        self._set_executable_path(config)
         self._api_token = api_token
         self._execution_dir = execution_dir
         self._process: subprocess.Popen | None = None
         self._assistant_port = 8285
         self._version = ''
         self._connections = {}
+
+    def _set_executable_path(self, config):
+        if config.executable_path:
+            if not Path(config.executable_path).is_file():
+                raise TaukException(f'invalid tauk assistant path: {config.executable_path}')
+            self._executable_path = config.executable_path
+            return
+
+        path = os.getenv('TAUK_ASSISTANT_EXECUTABLE')
+        if path:
+            if not Path(path).is_file():
+                raise TaukException(f'invalid tauk assistant path in environment variable: {path}')
+            self._executable_path = path
+            return
+
+        try:
+            # TODO: Verify on windows
+            path = f'{subprocess.check_output("which tauk-assistant", shell=True).decode("utf-8")}'.strip()
+            self._executable_path = path
+        except Exception as ex:
+            raise TaukException('tauk-assistant executable not found') from ex
 
     def is_running(self) -> bool:
         return True if self._process and self._process.poll() is None else False

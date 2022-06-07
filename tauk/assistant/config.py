@@ -1,5 +1,6 @@
 class AssistantConfig:
     def __init__(self) -> None:
+        self._executable_path = None
         self.cdp_config = {
             'runtime': {
                 'consoleLogs': {
@@ -21,6 +22,14 @@ class AssistantConfig:
             },
             'network': {}
         }
+
+    @property
+    def executable_path(self):
+        return self._executable_path
+
+    @executable_path.setter
+    def executable_path(self, path):
+        self._executable_path = path
 
     @staticmethod
     def default():
