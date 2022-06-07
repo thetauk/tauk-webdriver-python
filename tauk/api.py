@@ -118,10 +118,12 @@ class TaukApi:
 
     def upload(self, test_data):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
-        headers = {'Content-Type': 'application/json'}
+        headers = {'Content-Encoding': 'gzip'}
 
         logger.debug(f'Uploading test: url[{url}], headers[{headers}], body[{shortened_json(test_data)}]')
-        response = self.request(POST, url, data=test_data, headers=headers)
+
+        data = bytes(test_data, 'utf-8')
+        response = self.request(POST, url, data=gzip.compress(data), headers=headers)
         if not response.ok:
             logger.error(f'Failed to upload test. Response[{response.status_code}]: {response.text}')
             raise TaukException('failed to upload test results')
