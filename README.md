@@ -142,3 +142,45 @@ class TestDataTest(unittest.TestCase):
     ...
 
 ```
+
+
+
+### Installing and using the Tauk Assistant for Selenium Tests
+
+To use the Tauk Assistant in conjunction with the Tauk Python Package, you will first need to install the binary. The Tauk Python Package provides a built-in module for making this simple and straightforward. Simply run:
+
+```bash
+python -m tauk assistant -i -t <Your-API-Token>
+```
+
+- `-i` flag indicates that you would like to install
+- `-t` flag is for you to provide your API Token
+
+This will download the Tauk Assistant binary to your `.tauk` directory, which will be in `~/.tauk` by default, unless you have specified a custom path.
+
+To use the Tauk Assistant as part of a test execution you can configure it in your `TaukConfig`. The Tauk Python package will check your `.tauk` directory for the Tauk Assistant binary, but you can alternatively provide the absolute path to the Tauk Assistant binary as an environment variable.
+
+
+
+#### Configuring the Tauk Assistant in `TaukConfig`
+
+```python
+config = TaukConfig(api_token="API-TOKEN", project_id="PROJECT-ID")
+config.assistant_config = AssistantConfig.default()
+Tauk(config)
+```
+
+The example above shows the default option, which at this moment of time will capture the Browser Logs (`error` level), Exception Logs, and Console Logs (`error` level). This can be customized with the `AssistantConfig`. For example, if you wanted to capture the Console Logs with an `warn` level:
+
+```python
+AssistantConfig.capture_console_logs(True, log_level='warn')
+```
+
+
+
+#### Providing the Tauk Assistant as an Environment Variable
+
+```
+TAUK_ASSISTANT_EXECUTABLE=~/.tauk/binaries/tauk-assistant
+```
+
