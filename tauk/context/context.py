@@ -29,8 +29,8 @@ class TaukContext:
         # Initialize Tauk Assistant
         self.assistant: TaukAssistant | None = None
         if tauk_config.is_assistant_enabled():
-            self.assistant = TaukAssistant(tauk_config.api_token, self.exec_dir, tauk_config.assistant_config)
             try:
+                self.assistant = TaukAssistant(tauk_config.api_token, self.exec_dir, tauk_config.assistant_config)
                 self.assistant.launch()
             except Exception as ex:
                 logger.error('Failed to launch tauk assistant', exc_info=ex)
