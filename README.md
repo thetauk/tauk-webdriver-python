@@ -168,14 +168,14 @@ To use the Tauk Assistant as part of a test execution you can configure it in yo
 config = TaukConfig(api_token="API-TOKEN", project_id="PROJECT-ID")
 config.assistant_config = AssistantConfig.default()
 # Providing the Tauk Assistant path in code
-config.assistant_config.executable_path = '~/.tauk/binaries/tauk-assistant'
+config.assistant_config.executable_path = '/Users/example/.tauk/binaries/tauk-assistant'
 Tauk(config)
 ```
 
 The example above shows the default option, which at this moment of time will capture the Browser Logs (`error` level), Exception Logs, and Console Logs (`error` level). This can be customized with the `AssistantConfig`. For example, if you wanted to capture the Console Logs with an `warn` level:
 
 ```python
-config.capture_console_logs(True, log_level='warn')
+config.capture_console_logs(True, log_level='warning')
 ```
 
 
@@ -183,6 +183,6 @@ config.capture_console_logs(True, log_level='warn')
 #### Providing the Tauk Assistant as an Environment Variable
 
 ```
-TAUK_ASSISTANT_EXECUTABLE=~/.tauk/binaries/tauk-assistant
+TAUK_ASSISTANT_EXECUTABLE=/Users/example/.tauk/binaries/tauk-assistant
 ```
 
