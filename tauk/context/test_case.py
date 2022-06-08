@@ -12,7 +12,7 @@ from tauk.assistant.assistant import TaukAssistant
 from tauk.context.test_error import TestError
 from tauk.enums import AutomationTypes, PlatformNames, TestStatus, BrowserNames, AttachmentTypes
 from tauk.exceptions import TaukException
-from tauk.utils import get_appium_server_version, get_browser_driver_version, get_browser_debugger_address
+from tauk.utils import get_appium_server_version, get_browser_driver_version, get_browser_debugger_address, log_delay
 
 logger = logging.getLogger('tauk')
 
@@ -271,6 +271,7 @@ class TestCase(object):
             self.browser_version = self.capabilities.get('browserVersion', None)
             self.browser_driver_version = get_browser_driver_version(driver)
 
+    @log_delay(action_name='Capture Screenshot', after=3)
     def capture_screenshot(self):
         if self.screenshot and len(self.screenshot) > 0:
             logger.debug('Screenshot is already captured')
@@ -281,6 +282,7 @@ class TestCase(object):
 
         self.screenshot = self.driver_instance.get_screenshot_as_base64()
 
+    @log_delay(action_name='Capture ViewHierarchy', after=3)
     def capture_view_hierarchy(self):
         if self.view and len(self.view) > 0:
             logger.debug('View Hierarchy is already captured')
@@ -374,6 +376,7 @@ class TestCase(object):
         except Exception as ex:
             logger.error('Failed to capture test steps', exc_info=ex)
 
+    @log_delay(action_name='Capture Appium Logs', after=3)
     def capture_appium_logs(self):
         if not self.driver_instance:
             logger.warning('Not capturing appium logs because driver instance was not registered')
