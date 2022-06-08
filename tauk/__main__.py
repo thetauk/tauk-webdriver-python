@@ -25,7 +25,8 @@ def get_os_name():
 
 
 def get_architecture_name():
-    return platform.machine().lower()
+    machine = platform.machine().lower()
+    return 'amd64' if machine == 'x86_64' else machine
 
 
 def install_assistant(api_token, ver, url=None):
