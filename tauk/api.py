@@ -11,7 +11,7 @@ import tauk
 from tauk.context.test_data import TestData
 from tauk.enums import AttachmentTypes
 from tauk.exceptions import TaukException
-from tauk.utils import shortened_json
+from tauk.utils import shortened_json, log_delay
 
 logger = logging.getLogger('tauk')
 
@@ -51,6 +51,7 @@ class TaukApi:
     def get_project_id(self):
         return self._project_id
 
+    @log_delay(action_name='Initialize Run', after=3)
     def initialize_run(self, test_data: TestData, run_id: str = None):
         url = f'{self._API_URL}/execution/{self._project_id}/initialize'
         body = {
@@ -83,6 +84,7 @@ class TaukApi:
         logger.info(f'Setting run ID for current execution as {self.run_id}')
         return self.run_id
 
+    @log_delay(action_name='Test Start', after=3)
     def test_start(self, test_name, file_name, start_time):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/test/start'
         body = {
@@ -99,6 +101,7 @@ class TaukApi:
 
         return response.json().get('external_test_id')
 
+    @log_delay(action_name='Test Finish', after=3)
     def test_finish(self, test_name, file_name, start_time, end_time):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/test/finish'
         body = {
@@ -116,6 +119,7 @@ class TaukApi:
 
         return response.json().get('external_test_id')
 
+    @log_delay(action_name='Upload Test Results', after=6)
     def upload(self, test_data):
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/report/upload'
         headers = {'Content-Encoding': 'gzip'}
@@ -131,6 +135,7 @@ class TaukApi:
         logger.debug(f'Response: {response.text}')
         return response.json().get('result')
 
+    @log_delay(action_name='Upload Attachment', after=6)
     def upload_attachment(self, file_path, attachment_type: AttachmentTypes, test_id):
         if not test_id:
             raise TaukException(f'invalid test_id {test_id}')
@@ -148,6 +153,7 @@ class TaukApi:
 
             logger.debug(f'Response: {response.text}')
 
+    @log_delay(action_name='Finish Execution', after=6)
     def finish_execution(self, file_path=None):
         end_ts = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
         url = f'{self._API_URL}/execution/{self._project_id}/{self.run_id}/finish/{end_ts}'
