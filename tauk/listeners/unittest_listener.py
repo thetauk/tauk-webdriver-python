@@ -49,6 +49,7 @@ class TaukListener(unittest.TestResult):
         logger.info(f'# Test Started [{test.id()}] ---')
         caller_filename = inspect.getfile(test.__class__)
         self.test_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
+        self.test_filename = os.path.relpath(caller_filename)
         test_method_name = test.id().split('.')[-1]
 
         test_case = TestCase()
@@ -79,10 +80,8 @@ class TaukListener(unittest.TestResult):
                     logger.error('Failed to capture appium server logs', exc_info=ex)
 
             ctx = Tauk.get_context()
-            caller_filename = inspect.getfile(test.__class__)
-            caller_rel_filename = os.path.relpath(caller_filename, os.getcwd())
-            upload_result = ctx.api.upload(ctx.get_json_test_data(caller_rel_filename, test_case.method_name))
-            test_case.id = upload_result.get(caller_rel_filename).get(test_case.method_name)
+            upload_result = ctx.api.upload(ctx.get_json_test_data(self.test_filename, test_case.method_name))
+            test_case.id = upload_result.get(self.test_filename).get(test_case.method_name)
 
             # Attach assistant artifacts
             try:
