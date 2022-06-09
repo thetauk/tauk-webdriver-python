@@ -48,7 +48,6 @@ class TaukListener(unittest.TestResult):
 
         logger.info(f'# Test Started [{test.id()}] ---')
         caller_filename = inspect.getfile(test.__class__)
-        self.test_filename = caller_filename.replace(f'{os.getcwd()}{os.sep}', '')
         self.test_filename = os.path.relpath(caller_filename)
         test_method_name = test.id().split('.')[-1]
 
