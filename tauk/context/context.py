@@ -14,6 +14,8 @@ from tauk.log_formatter import CustomJsonFormatter
 
 from filelock import FileLock
 
+from tauk.utils import log_delay
+
 logger = logging.getLogger('tauk')
 
 
@@ -87,6 +89,7 @@ class TaukContext:
     def _init_run(self, run_id=None):
         return self.api.initialize_run(self.test_data, run_id)
 
+    @log_delay(action_name='Delete Execution Files', after=3)
     def delete_execution_files(self):
         if not os.path.exists(self.exec_dir):
             return

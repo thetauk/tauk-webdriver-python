@@ -50,7 +50,7 @@ def mock(urls: [], json_responses: typing.List[object], statuses: typing.List[in
         test_method_name = func.__name__
         for frame_info in inspect.stack():
             if all(elem in frame_info.frame.f_code.co_names for elem in ['Tauk', 'observe']):
-                caller_filename = frame_info.filename.replace(f'{os.getcwd()}{os.sep}', '')
+                caller_filename = os.path.relpath(frame_info.filename)
                 break
 
         @wraps(func)
@@ -94,7 +94,7 @@ def mock_success(expected_run_id='6d917db6-cf5d-4f30-8303-6eefc35e7558', validat
     method_name = ''
     for i, frame_info in enumerate(inspect.stack()):
         if f'{mock_success.__name__}' in frame_info.frame.f_code.co_names:
-            file_name = os.path.relpath(frame_info.filename, os.getcwd())
+            file_name = os.path.relpath(frame_info.filename)
             method_name = frame_info.frame.f_code.co_names[-1]
 
     return mock(

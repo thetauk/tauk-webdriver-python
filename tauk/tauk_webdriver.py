@@ -77,7 +77,7 @@ class Tauk:
 
             file_name = inspect.getfile(unittestcase.__class__)
             method_name = unittestcase.id().split('.')[-1]
-            return file_name, os.path.relpath(file_name, os.getcwd()), method_name
+            return file_name, os.path.relpath(file_name), method_name
         elif not func_name and not ref_frame:
             raise TaukException('expecting either function name or reference frame function name')
 
@@ -86,11 +86,11 @@ class Tauk:
             if func_name and func_name in frame_info.frame.f_code.co_names:
                 file_name = frame_info.filename
                 method_name = func_name
-                return file_name, os.path.relpath(file_name, os.getcwd()), method_name
+                return file_name, os.path.relpath(file_name), method_name
             elif ref_frame and found_ref_frame:
                 file_name = frame_info.filename
                 method_name = frame_info.function
-                return file_name, os.path.relpath(file_name, os.getcwd()), method_name
+                return file_name, os.path.relpath(file_name), method_name
             elif ref_frame and frame_info.function == ref_frame:
                 found_ref_frame = True
 

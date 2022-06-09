@@ -2,6 +2,9 @@ import logging
 import os
 import re
 import socket
+import time
+from functools import wraps
+
 import requests
 
 from contextlib import closing
@@ -107,3 +110,26 @@ def upload_attachments(api, test_case):
                     os.remove(file_path)
         except Exception as ex:
             logger.error(f'Failed to upload attachment {attachment_type}: {file_path}', exc_info=ex)
+
+
+def log_delay(action_name=None, after=0):
+    def inner_decorator(func):
+        @wraps(func)
+        def timer(*args, **kwargs):
+            t1 = time.time()
+            try:
+                return func(*args, **kwargs)
+            finally:
+                time_taken = (time.time() - t1)
+                action = action_name if action_name else func.__name__
+                log_with_level = logger.debug
+                title = 'TIME TAKEN:'
+                if type(after) == int and after > 0:
+                    log_with_level = logger.warning
+                    title = 'SLOW ACTION:'
+                if type(after) == int and time_taken > after:
+                    log_with_level(f'{title} [{action}] took [{time_taken}] seconds')
+
+        return timer
+
+    return inner_decorator
