@@ -18,6 +18,7 @@ class TaukConfig:
         self._api_url = os.environ.get('TAUK_API_URL', 'https://www.tauk.com/api/v1')
         self._cleanup_exec_context = True
         self._assistant_config: AssistantConfig | None = None
+        self._project_root_dir = os.getcwd()
 
     def _get_value_from_property_or_env(self, prop, env_var):
         if prop:
@@ -63,6 +64,14 @@ class TaukConfig:
     def assistant_config(self, val: AssistantConfig):
         self._validate_type(val, AssistantConfig)
         self._assistant_config = val
+
+    @property
+    def project_root_dir(self):
+        return self._project_root_dir
+
+    @project_root_dir.setter
+    def project_root_dir(self, path: str):
+        self._project_root_dir = path
 
     @staticmethod
     def _validate_type(val, expected_type):
