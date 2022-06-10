@@ -46,9 +46,11 @@ class TaukListener(unittest.TestResult):
             super().startTest(test)
             return
 
+        ctx = Tauk.get_context()
+
         logger.info(f'# Test Started [{test.id()}] ---')
         caller_filename = inspect.getfile(test.__class__)
-        self.test_filename = os.path.relpath(caller_filename)
+        self.test_filename = os.path.relpath(caller_filename, ctx.project_root_dir)
         test_method_name = test.id().split('.')[-1]
 
         test_case = TestCase()
@@ -56,7 +58,7 @@ class TaukListener(unittest.TestResult):
         test_case.start_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
         test_case.custom_name = test.shortDescription()
 
-        Tauk.get_context().test_data.add_test_case(self.test_filename, test_case)
+        ctx.test_data.add_test_case(self.test_filename, test_case)
         self.tests[test.id()] = test_case
 
         super().startTest(test)

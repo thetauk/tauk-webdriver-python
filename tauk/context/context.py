@@ -27,6 +27,7 @@ class TaukContext:
         self._setup_error_logger()
         self._exec_file = os.path.join(self.exec_dir, 'exec.run')
         self.api = TaukApi(tauk_config.api_token, tauk_config.project_id, tauk_config.multiprocess_run)
+        self._project_root_dir = tauk_config.project_root_dir
 
         # Initialize Tauk Assistant
         self.assistant: TaukAssistant | None = None
@@ -42,6 +43,10 @@ class TaukContext:
             return
 
         self.run_id = self._init_run()
+
+    @property
+    def project_root_dir(self):
+        return self._project_root_dir
 
     def _setup_exec_dir(self, multiprocess_run):
         self.exec_dir = self._get_exec_dir(multiprocess_run)
