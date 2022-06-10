@@ -233,8 +233,15 @@ class TestCase(object):
 
         def tauk_callback(func):
             def inner():
-                self.capture_screenshot()
-                self.capture_view_hierarchy()
+                try:
+                    self.capture_screenshot()
+                except Exception as ex:
+                    logger.error('Failed to capture screenshot', exc_info=ex)
+
+                try:
+                    self.capture_view_hierarchy()
+                except Exception as ex:
+                    logger.error('Failed to capture view hierarchy', exc_info=ex)
                 func()
 
             return inner
