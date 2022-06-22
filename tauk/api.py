@@ -2,6 +2,7 @@ import gzip
 import logging
 import os
 import platform
+import re
 from datetime import datetime, timezone
 
 import requests
@@ -77,7 +78,8 @@ class TaukApi:
         logger.debug(f'Response: {response.text}')
         self.run_id = response.json()['run_id']
         latest_client_versions = response.json().get('latest_tauk_client_version', tauk.__version__)
-        if tauk.__version__ != 'develop' and latest_client_versions != tauk.__version__:
+        if tauk.__version__ != 'develop' and re.search(r'\s*([\d.]+)', latest_client_versions)\
+                and latest_client_versions != tauk.__version__:
             logger.warning(f'You are currently using Tauk [{tauk.__version__}]. '
                            f'Consider updating to latest version [{latest_client_versions}] using '
                            f'"pip install -U tauk"')
