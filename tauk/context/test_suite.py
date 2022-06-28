@@ -1,8 +1,10 @@
 import typing
+from threading import Lock
 
 from tauk.context.test_case import TestCase
 from tauk.exceptions import TaukException
 
+mutex = Lock()
 
 class TestSuite:
     def __init__(self, filename) -> None:
@@ -56,8 +58,9 @@ class TestSuite:
         self.test_cases.append(testcase)
 
     def remove_testcase(self, test_method_name):
-        # TODO: Implement thread safe delete
-        pass
+        with mutex:
+            # TODO: Make this implementation thread safe since we are rewriting the
+            self.test_cases[:] = [t for t in self.test_cases if not t.method_name == test_method_name]
 
     def get_test_case(self, test_name) -> TestCase:
         for test in self.test_cases:
