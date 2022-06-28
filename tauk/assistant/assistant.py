@@ -56,8 +56,8 @@ class TaukAssistant:
         if self.is_running():
             raise TaukException(f'an instance of tauk assistant is already running at {self._assistant_port}')
 
-        # TODO: Implement a more reliable way to lock the port since there could  be a race condition with multiple exec
-        self._assistant_port = get_open_port(range(self._assistant_port, self._assistant_port + 10))
+        port_range = range(self._assistant_port, self._assistant_port + self.config.max_instances)
+        self._assistant_port = get_open_port(port_range)
         if not self._assistant_port:
             raise TaukException('No free ports available in the range {range}')
 

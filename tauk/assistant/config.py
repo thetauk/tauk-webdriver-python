@@ -1,3 +1,6 @@
+from tauk.exceptions import TaukException
+
+
 class AssistantConfig:
     def __init__(self) -> None:
         self._executable_path = None
@@ -22,6 +25,8 @@ class AssistantConfig:
             },
             'network': {}
         }
+
+        self._max_instances = 10
 
     @property
     def executable_path(self):
@@ -62,6 +67,16 @@ class AssistantConfig:
         return self.is_capturing_console_logs() or \
                self.is_capturing_browser_logs() or \
                self.is_capturing_uncaught_exceptions()
+
+    @property
+    def max_instances(self):
+        return self._max_instances
+
+    @max_instances.setter
+    def max_instances(self, no: int):
+        if no not in range(1, 16):
+            raise TaukException('max instance must be an integer value between 1 and 15')
+        self._max_instances = no
 
     def __str__(self):
         return f'AssistantConfig: {self.cdp_config}'
