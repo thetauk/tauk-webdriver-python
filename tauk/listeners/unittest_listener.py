@@ -70,6 +70,7 @@ class TaukListener(unittest.TestResult):
             return
 
         logger.info(f'# Test Stopped [{test.id()}] ---')
+        ctx = Tauk.get_context()
         try:
             test_case = self.tests[test.id()]
             test_case.end_timestamp = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
@@ -80,7 +81,6 @@ class TaukListener(unittest.TestResult):
                 except Exception as ex:
                     logger.error('Failed to capture appium server logs', exc_info=ex)
 
-            ctx = Tauk.get_context()
             upload_result = ctx.api.upload(ctx.get_json_test_data(self.test_filename, test_case.method_name))
             test_case.id = upload_result.get(self.test_filename).get(test_case.method_name)
 
@@ -93,6 +93,9 @@ class TaukListener(unittest.TestResult):
             upload_attachments(ctx.api, test_case)
         except Exception as ex:
             logger.error(f'Failed to update test results for the test {test.id()}', exc_info=ex)
+        finally:
+            ctx.test_data.delete_test_case(self.test_filename, self.tests[test.id()].method_name)
+            del self.tests[test.id()]
 
     def addError(self, test: unittest.case.TestCase, err: tuple) -> None:
         super().addError(test, err)

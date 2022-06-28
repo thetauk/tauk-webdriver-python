@@ -63,7 +63,7 @@ class TaukContext:
         self.error_log = os.path.join(self.exec_dir, 'tauk-webdriver-error.log')
         error_file_handler = logging.FileHandler(filename=self.error_log)
         error_file_handler.setLevel(logging.WARNING)
-        formatter = CustomJsonFormatter('%(timestamp)s %(process)d %(threadName)s %(message)s')
+        formatter = CustomJsonFormatter('%(timestamp)s %(process)d %(threadName)s %(message)s', tauk_context=self)
         error_file_handler.setFormatter(formatter)
         logger.addHandler(error_file_handler)
 
