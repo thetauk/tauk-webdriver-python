@@ -31,3 +31,4 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
                 if len(suite.test_cases) == 1:
                     log_record['suite'] = suite.filename
                     log_record['test'] = suite.test_cases[0].method_name
+                    break

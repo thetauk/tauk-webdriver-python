@@ -59,7 +59,7 @@ class TestSuite:
 
     def remove_testcase(self, test_method_name):
         with mutex:
-            # TODO: Make this implementation thread safe since we are rewriting the
+            # TODO: Make this implementation thread safe since we are rewriting test_cases
             self.test_cases[:] = [t for t in self.test_cases if not t.method_name == test_method_name]
 
     def get_test_case(self, test_name) -> TestCase:
