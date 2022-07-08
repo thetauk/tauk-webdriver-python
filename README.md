@@ -185,4 +185,3 @@ config.capture_console_logs(True, log_level='warning')
 ```
 TAUK_ASSISTANT_EXECUTABLE=/Users/example/.tauk/binaries/tauk-assistant
 ```
-
