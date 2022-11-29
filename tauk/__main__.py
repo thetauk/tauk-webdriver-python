@@ -62,7 +62,26 @@ def install_assistant(api_token, ver, url=None):
     print_verbose(f'Extracting tar file {assistant_tgz_path}')
     import tarfile
     with tarfile.open(assistant_tgz_path) as file:
-        file.extractall(binaries_home)
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(file, binaries_home)
 
     try:
         os.rename(binary_path, new_binary_path)
